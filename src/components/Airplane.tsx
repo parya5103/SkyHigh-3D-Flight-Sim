@@ -1,8 +1,9 @@
 import { useGLTF } from '@react-three/drei';
-import { useRef, Suspense, useState, useMemo } from 'react';
-import { Group, BoxGeometry, MeshStandardMaterial, Mesh } from 'three';
+import { useRef, Suspense, useMemo } from 'react';
+import { Group } from 'three';
 import { useGameStore } from '../store/gameStore';
 import { AIRCRAFT_MODELS } from '../lib/constants';
+import { ErrorBoundary } from './ErrorBoundary';
 
 function ProceduralAirplane({ scale }: { scale: number }) {
   return (
@@ -32,20 +33,7 @@ function ProceduralAirplane({ scale }: { scale: number }) {
 }
 
 function ModelLoader({ url, config }: { url: string, config: any }) {
-  const [error, setError] = useState(false);
-  
-  // Custom hook usage with error callback (if supported) or just rely on Suspense + ErrorBoundary
-  // However, simpler is to catch it during preload or use a safe loader
-  const gltf = useGLTF(url, true, true, (err) => {
-    if (err) {
-       console.error("Model load error:", url);
-       setError(true);
-    }
-  });
-
-  if (error || !gltf) {
-    return <ProceduralAirplane scale={config.scale * 2} />;
-  }
+  const gltf = useGLTF(url);
 
   return (
     <primitive 
@@ -69,18 +57,12 @@ export function Airplane() {
 
   return (
     <group ref={group}>
-      <Suspense fallback={<ProceduralAirplane scale={aircraftConfig.scale * 2} />}>
-        <ModelLoader url={aircraftDef.url} config={aircraftConfig} />
-      </Suspense>
+      <ErrorBoundary fallback={<ProceduralAirplane scale={aircraftConfig.scale * 2} />}>
+        <Suspense fallback={<ProceduralAirplane scale={aircraftConfig.scale * 2} />}>
+          <ModelLoader url={aircraftDef.url} config={aircraftConfig} />
+        </Suspense>
+      </ErrorBoundary>
       <pointLight position={[0, 0.5, -0.5]} intensity={0.5} color="#44ff44" />
     </group>
   );
 }
-
-AIRCRAFT_MODELS.forEach(a => {
-  try {
-    useGLTF.preload(a.url);
-  } catch (e) {
-    // Silent fail for preload
-  }
-});

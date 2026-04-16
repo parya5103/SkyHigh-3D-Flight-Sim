@@ -1,27 +1,38 @@
-import { useRef, useMemo, useEffect, useState } from 'react';
+import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useGLTF, Instance, Instances } from '@react-three/drei';
+import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore } from '../store/gameStore';
+import { ErrorBoundary } from './ErrorBoundary';
+import { Suspense } from 'react';
 
 // AI Traffic types and their simple flight paths
 const AI_COUNT = 15;
 
+const ASSET_URL = 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/small-plane/model.gltf';
+
+function AIPlaneModel({ type }: { type: 'AIRLINER' | 'PRIVATE' }) {
+  const gltf = useGLTF(ASSET_URL);
+  return <primitive object={gltf.scene.clone()} />;
+}
+
+function AIPlaneFallback({ type }: { type: 'AIRLINER' | 'PRIVATE' }) {
+  return (
+    <mesh>
+      <boxGeometry args={[1, 0.5, 3]} />
+      <meshStandardMaterial color={type === 'AIRLINER' ? "white" : "orange"} />
+    </mesh>
+  );
+}
+
 export function AITraffic() {
-  const [modelError, setModelError] = useState(false);
-  const gltf = useGLTF('https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/small-plane/model.gltf', true, true, (error) => {
-    console.error("AI Traffic Model Load Error:", error);
-    setModelError(true);
-  });
-  
   const isPlaying = useGameStore((state) => state.isPlaying);
-  const setAITraffic = useGameStore((state) => state.setAITraffic);
 
   // Initialize random AI positions and velocities
   const aiState = useMemo(() => {
     return Array.from({ length: AI_COUNT }).map((_, i) => ({
       id: `ai-${i}`,
-      type: Math.random() > 0.3 ? 'AIRLINER' : 'PRIVATE' as const,
+      type: (Math.random() > 0.3 ? 'AIRLINER' : 'PRIVATE') as 'AIRLINER' | 'PRIVATE',
       position: new THREE.Vector3(
         (Math.random() - 0.5) * 20000,
         Math.random() * 5000 + 1000,
@@ -60,14 +71,11 @@ export function AITraffic() {
     <group ref={instancesRef}>
       {aiState.map((ai, i) => (
         <group key={ai.id} position={ai.position} rotation={ai.rotation} scale={ai.type === 'AIRLINER' ? 5 : 2}>
-           {!modelError && gltf ? (
-              <primitive object={gltf.scene.clone()} />
-           ) : (
-              <mesh>
-                 <boxGeometry args={[1, 0.5, 3]} />
-                 <meshStandardMaterial color={ai.type === 'AIRLINER' ? "white" : "orange"} />
-              </mesh>
-           )}
+           <ErrorBoundary fallback={<AIPlaneFallback type={ai.type} />}>
+             <Suspense fallback={<AIPlaneFallback type={ai.type} />}>
+               <AIPlaneModel type={ai.type} />
+             </Suspense>
+           </ErrorBoundary>
            <pointLight 
               color={i % 2 === 0 ? "red" : "green"} 
               intensity={10} 
@@ -79,5 +87,3 @@ export function AITraffic() {
     </group>
   );
 }
-
-useGLTF.preload('https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/small-plane/model.gltf');
