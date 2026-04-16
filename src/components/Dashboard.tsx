@@ -1,18 +1,20 @@
 import { useGameStore } from '../store/gameStore';
-import { CITIES, MISSIONS } from '../lib/constants';
-import { MapPin, Plane, Play, Globe, Settings, Users, Navigation, Trophy, Package, LifeBuoy } from 'lucide-react';
+import { CITIES, MISSIONS, AIRCRAFT_MODELS } from '../lib/constants';
+import { MapPin, Plane, Play, Globe, Settings, Users, Navigation, Trophy, Package, LifeBuoy, Rocket } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 
 export function Dashboard() {
   const isPlaying = useGameStore((state) => state.isPlaying);
   const selectedCity = useGameStore((state) => state.selectedCity);
+  const selectedAircraftId = useGameStore((state) => state.selectedAircraftId);
   const activeMissionId = useGameStore((state) => state.mission.activeId);
   const setCity = useGameStore((state) => state.setCity);
+  const setAircraft = useGameStore((state) => state.setAircraft);
   const setPlaying = useGameStore((state) => state.setPlaying);
   const startMission = useGameStore((state) => state.startMission);
 
-  const [activeTab, setActiveTab] = useState<'cities' | 'missions'>('cities');
+  const [activeTab, setActiveTab] = useState<'cities' | 'missions' | 'aircraft'>('cities');
 
   if (isPlaying) return null;
 
@@ -29,6 +31,11 @@ export function Dashboard() {
                 icon={<Globe size={20} />} 
                 active={activeTab === 'cities'} 
                 onClick={() => setActiveTab('cities')}
+              />
+              <NavButton 
+                icon={<Rocket size={20} />} 
+                active={activeTab === 'aircraft'} 
+                onClick={() => setActiveTab('aircraft')}
               />
               <NavButton 
                 icon={<Trophy size={20} />} 
@@ -58,7 +65,7 @@ export function Dashboard() {
                    </div>
                  )}
                  <div className="px-4 py-1.5 border border-[#FF3D00]/40 bg-[#FF3D00]/10 text-[#FF3D00] text-[10px] font-bold uppercase tracking-widest">
-                    Status: Readiness {activeMissionId ? 'Mission Loaded' : 'Idle'}
+                    Status: {activeMissionId ? 'Mission Loaded' : 'Idle'}
                  </div>
                  <div className="w-2 h-2 rounded-full bg-[#00E5FF] animate-pulse" />
               </div>
@@ -66,7 +73,7 @@ export function Dashboard() {
 
            {/* Content Grid */}
            <main className="flex-1 overflow-y-auto grid grid-cols-12 gap-8 p-12">
-              {activeTab === 'cities' ? (
+              {activeTab === 'cities' && (
                  <div className="col-span-8 flex flex-col gap-6">
                     <div className="flex items-baseline justify-between">
                        <h2 className="text-2xl font-light tracking-widest uppercase">Select Target City</h2>
@@ -106,7 +113,46 @@ export function Dashboard() {
                        ))}
                     </div>
                  </div>
-              ) : (
+              )}
+
+              {activeTab === 'aircraft' && (
+                 <div className="col-span-8 flex flex-col gap-6">
+                    <div className="flex items-baseline justify-between">
+                       <h2 className="text-2xl font-light tracking-widest uppercase">Select Aircraft</h2>
+                       <span className="text-[10px] opacity-40 uppercase tracking-widest">{AIRCRAFT_MODELS.length} Vessels in Hangar</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-4">
+                       {AIRCRAFT_MODELS.map((aircraft) => (
+                          <button
+                             key={aircraft.id}
+                             onClick={() => setAircraft(aircraft.id)}
+                             className={`group relative p-8 rounded bg-[#0F172A]/40 border transition-all duration-300 text-left flex items-center gap-8 ${
+                                selectedAircraftId === aircraft.id ? 'border-[#00E5FF] ring-1 ring-[#00E5FF]/20' : 'border-white/5 hover:border-[#00E5FF]/40'
+                             }`}
+                          >
+                             <div className="w-32 h-20 bg-black/40 rounded flex items-center justify-center border border-white/5 group-hover:border-[#00E5FF]/40 overflow-hidden">
+                                <Rocket size={24} className={selectedAircraftId === aircraft.id ? 'text-[#00E5FF]' : 'opacity-20'} />
+                             </div>
+                             <div className="flex-1">
+                                <h3 className="text-xl font-bold tracking-widest uppercase mb-1">{aircraft.name}</h3>
+                                <p className="text-[11px] opacity-60 mb-4">{aircraft.description}</p>
+                                <div className="flex gap-4">
+                                   <AircraftStat label="SPE" value={aircraft.stats.speed} />
+                                   <AircraftStat label="AGI" value={aircraft.stats.agility} />
+                                   <AircraftStat label="FUE" value={aircraft.stats.fuel} />
+                                </div>
+                             </div>
+                             <div className="text-[#00E5FF]">
+                                {selectedAircraftId === aircraft.id ? <Check size={20} /> : <div className="w-5 h-5 border border-white/10 rounded-full" />}
+                             </div>
+                          </button>
+                       ))}
+                    </div>
+                 </div>
+              )}
+
+              {activeTab === 'missions' && (
                  <div className="col-span-8 flex flex-col gap-6">
                     <div className="flex items-baseline justify-between">
                        <h2 className="text-2xl font-light tracking-widest uppercase">Mission Board</h2>
@@ -120,6 +166,7 @@ export function Dashboard() {
                              onClick={() => {
                                 startMission(mission.id);
                                 if (!selectedCity) setCity(CITIES[0]); // Default city if none selected
+                                setActiveTab('cities'); // Redirect to city to pick destination or start
                              }}
                              className={`group relative p-6 rounded bg-[#0F172A]/40 border transition-all duration-300 flex items-center gap-6 ${
                                 activeMissionId === mission.id ? 'border-[#00E5FF] ring-1 ring-[#00E5FF]/20' : 'border-white/5 hover:border-[#00E5FF]/40'
@@ -150,7 +197,7 @@ export function Dashboard() {
                     <h3 className="text-[10px] uppercase tracking-widest opacity-40 mb-6 font-mono text-[#64748B]">Pre-Flight Telemetry</h3>
                     
                     <div className="space-y-6">
-                       <StatusRow label="Vessel" value="Simulation Pilot 1.0" />
+                       <StatusRow label="Vessel" value={AIRCRAFT_MODELS.find(a => a.id === selectedAircraftId)?.name || "Unknown"} />
                        <StatusRow label="Mode" value={activeMissionId ? "Mission Protocol" : "Free Flight"} />
                        <StatusRow label="Physics" value="Aero Balancing" />
                        <StatusRow label="Region" value={selectedCity?.name || "Unselected"} />
@@ -205,5 +252,33 @@ function StatusRow({ label, value }: { label: string; value: string }) {
        <span className="text-[9px] uppercase tracking-widest text-[#64748B] font-mono">{label}</span>
        <span className="text-sm font-medium tracking-tight text-[#F8FAFC]">{value}</span>
     </div>
+  );
+}
+
+function AircraftStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-2 items-center">
+       <span className="text-[8px] opacity-40 font-mono tracking-tighter">{label}</span>
+       <span className="text-[10px] font-bold text-[#00E5FF]">{value}</span>
+    </div>
+  );
+}
+
+function Check({ className, size }: { className?: string, size?: number }) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width={size} 
+      height={size} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="3" 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      className={className}
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
   );
 }

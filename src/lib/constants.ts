@@ -61,3 +61,27 @@ export const AI_TYPES = {
   AIRLINER: { label: 'Airbus A320', scale: 2.0, color: '#FFFFFF', speed: 120 },
   PRIVATE: { label: 'Cessna 172', scale: 0.5, color: '#D48166', speed: 60 }
 };
+
+export const AIRCRAFT_MODELS = [
+  {
+    id: 'swift',
+    name: 'SwiftStream II',
+    description: 'Ultra-realistic private jet with balanced handling and executive interior.',
+    url: 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/airplane/model.gltf',
+    stats: { speed: '320 KT', agility: 'High', fuel: 'High' }
+  },
+  {
+    id: 'stealth',
+    name: 'Ghost-V Raptor',
+    description: 'Meshy-AI optimized stealth interceptor for high-altitude reconnaissance.',
+    url: 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/low-poly-spaceship/model.gltf', 
+    stats: { speed: 'Mach 2.2', agility: 'Extreme', fuel: 'Low' }
+  },
+  {
+    id: 'vtol',
+    name: 'Atlas Heavy-Lift',
+    description: 'Heavy duty VTOL transport designed for long-range cargo delivery.',
+    url: 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/helicopter/model.gltf',
+    stats: { speed: '180 KT', agility: 'Low', fuel: 'Ultra' }
+  }
+];

@@ -8,7 +8,7 @@ import { useGameStore } from '../store/gameStore';
 const AI_COUNT = 15;
 
 export function AITraffic() {
-  const { scene } = useGLTF('https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/airplane/model.gltf');
+  const { scene } = useGLTF('https://cdn.jsdelivr.net/gh/pmndrs/drei-assets@master/airplane.glb');
   const isPlaying = useGameStore((state) => state.isPlaying);
   const setAITraffic = useGameStore((state) => state.setAITraffic);
 
@@ -85,4 +85,4 @@ export function AITraffic() {
   );
 }
 
-useGLTF.preload('https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/airplane/model.gltf');
+useGLTF.preload('https://cdn.jsdelivr.net/gh/pmndrs/drei-assets@master/airplane.glb');

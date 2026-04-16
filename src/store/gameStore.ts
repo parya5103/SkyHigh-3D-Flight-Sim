@@ -32,6 +32,7 @@ interface GameState {
   isPlaying: boolean;
   isPaused: boolean;
   selectedCity: { name: string; lat: number; lng: number } | null;
+  selectedAircraftId: string;
   telemetry: Telemetry;
   multiplayerPlayers: any[];
   mission: MissionStatus;
@@ -39,6 +40,7 @@ interface GameState {
   
   setPlaying: (playing: boolean) => void;
   setCity: (city: any) => void;
+  setAircraft: (id: string) => void;
   updateTelemetry: (data: Partial<Telemetry>) => void;
   setMultiplayerPlayers: (players: any[]) => void;
   addMultiplayerPlayer: (player: any) => void;
@@ -55,6 +57,7 @@ export const useGameStore = create<GameState>((set) => ({
   isPlaying: false,
   isPaused: false,
   selectedCity: null,
+  selectedAircraftId: 'swift',
   telemetry: {
     altitude: 0,
     speed: 0,
@@ -82,6 +85,7 @@ export const useGameStore = create<GameState>((set) => ({
     mission: playing ? state.mission : { activeId: null, progress: 0, timeRemaining: 0, isCompleted: false, isFailed: false }
   })),
   setCity: (city) => set({ selectedCity: city }),
+  setAircraft: (id) => set({ selectedAircraftId: id }),
   updateTelemetry: (data) => set((state) => ({ 
     telemetry: { ...state.telemetry, ...data } 
   })),

@@ -55,24 +55,44 @@ export function FlightPhysics({ children }: { children: React.ReactNode }) {
     const currentSpeed = velocity.current.length();
 
     // Forces
-    // Thrust
+    // 1. Thrust
     const thrust = forward.clone().multiplyScalar(throttleRef.current * PLANE_STATS.thrustMax * delta * 0.05);
     velocity.current.add(thrust);
 
-    // Lift
-    // Lift = 0.5 * rho * v^2 * S * Cl
-    // Rho (air density) ~ 1.225 at sea level
-    const liftMagnitude = 0.5 * 1.225 * Math.pow(currentSpeed, 2) * PLANE_STATS.wingArea * 0.1; // Simplified Cl
+    // 2. Lift & Stall Physics
+    // Cl changes with Angle of Attack (AoA)
+    // Simplified AoA check: dot product of forward and up
+    const worldUp = new THREE.Vector3(0, 1, 0);
+    const angleOfAttack = Math.asin(Math.max(-1, Math.min(1, forward.dot(worldUp))));
+    
+    // Stall logic: Cl drops sharply after ~15-20 degrees
+    let Cl = 0.1 + angleOfAttack * 2.0; 
+    const stallAngle = 0.35; // ~20 degrees
+    if (Math.abs(angleOfAttack) > stallAngle) {
+       Cl *= 0.2; // Stall! Loss of lift
+    }
+
+    // Ground Effect: Lift increases by up to 20% when close to ground
+    const altitudeMeters = plane.position.y - 2;
+    const groundEffect = altitudeMeters < 10 ? (1 + (1 - altitudeMeters / 10) * 0.2) : 1;
+
+    const liftMagnitude = 0.5 * 1.225 * Math.pow(currentSpeed, 2) * PLANE_STATS.wingArea * Cl * groundEffect;
     const lift = up.clone().multiplyScalar(liftMagnitude * delta);
     velocity.current.add(lift);
 
-    // Drag
-    const dragMagnitude = 0.5 * 1.225 * Math.pow(currentSpeed, 2) * 0.5 * 0.2; // Simplified Cd
-    const drag = velocity.current.clone().normalize().multiplyScalar(-dragMagnitude * delta);
+    // 3. Drag (Parasitic + Induced)
+    // Parasitic drag ~ v^2
+    const parasiticDragCoeff = 0.02;
+    const parasiticDragMag = 0.5 * 1.225 * Math.pow(currentSpeed, 2) * parasiticDragCoeff;
+    
+    // Induced drag ~ Lift^2 (simplified)
+    const inducedDragMag = Math.pow(liftMagnitude, 2) * 0.000001;
+    
+    const drag = velocity.current.clone().normalize().multiplyScalar(-(parasiticDragMag + inducedDragMag) * delta);
     velocity.current.add(drag);
 
-    // Gravity
-    const gravity = new THREE.Vector3(0, -9.81 * delta * 0.5, 0); // Scaled for playability
+    // 4. Gravity
+    const gravity = new THREE.Vector3(0, -9.81 * delta * 0.6, 0); // Slightly adjusted for feel
     velocity.current.add(gravity);
 
     // Apply Velocity
