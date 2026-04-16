@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { logEvent } from '../lib/growthHacker';
 
 interface Telemetry {
   altitude: number;
@@ -37,6 +38,12 @@ interface GameState {
   multiplayerPlayers: any[];
   mission: MissionStatus;
   aiTraffic: AIVehicle[];
+  userMetrics: {
+    xp: number;
+    level: number;
+    credits: number;
+    totalFlightTime: number;
+  };
   
   setPlaying: (playing: boolean) => void;
   setCity: (city: any) => void;
@@ -78,12 +85,21 @@ export const useGameStore = create<GameState>((set) => ({
     isFailed: false,
   },
   aiTraffic: [],
+  userMetrics: {
+    xp: 0,
+    level: 1,
+    credits: 0,
+    totalFlightTime: 0,
+  },
 
-  setPlaying: (playing) => set((state) => ({ 
-    isPlaying: playing,
-    // Reset mission if stopping
-    mission: playing ? state.mission : { activeId: null, progress: 0, timeRemaining: 0, isCompleted: false, isFailed: false }
-  })),
+  setPlaying: (playing: boolean) => {
+    logEvent(playing ? 'SIM_START' : 'SIM_STOP');
+    set((state) => ({ 
+      isPlaying: playing,
+      // Reset mission if stopping
+      mission: playing ? state.mission : { activeId: null, progress: 0, timeRemaining: 0, isCompleted: false, isFailed: false }
+    }));
+  },
   setCity: (city) => set({ selectedCity: city }),
   setAircraft: (id) => set({ selectedAircraftId: id }),
   updateTelemetry: (data) => set((state) => ({ 
@@ -112,11 +128,22 @@ export const useGameStore = create<GameState>((set) => ({
   updateMission: (data) => set((state) => ({
     mission: { ...state.mission, ...data }
   })),
-  completeMission: () => set((state) => ({
-    mission: { ...state.mission, isCompleted: true }
-  })),
-  failMission: () => set((state) => ({
-    mission: { ...state.mission, isFailed: true }
-  })),
+  completeMission: () => set((state) => {
+    logEvent('MISSION_COMPLETE', { id: state.mission.activeId });
+    return {
+      mission: { ...state.mission, isCompleted: true },
+      userMetrics: {
+        ...state.userMetrics,
+        xp: state.userMetrics.xp + 500,
+        credits: state.userMetrics.credits + 1000
+      }
+    };
+  }),
+  failMission: () => {
+    logEvent('MISSION_FAIL');
+    set((state) => ({
+      mission: { ...state.mission, isFailed: true }
+    }));
+  },
   setAITraffic: (vehicles) => set({ aiTraffic: vehicles }),
 }));

@@ -3,6 +3,7 @@ import { useGameStore } from './store/gameStore';
 import { FlightScene } from './components/FlightScene';
 import { HUD } from './components/HUD';
 import { Dashboard } from './components/Dashboard';
+import { GrowthEngine } from './components/GrowthEngine';
 import { io } from 'socket.io-client';
 
 const socket = io();
@@ -84,6 +85,7 @@ export default function App() {
       {/* Interface Layers */}
       <HUD />
       <Dashboard />
+      <GrowthEngine />
 
       {/* Network Overlays (Small indicators) */}
       <div className="absolute top-4 left-4 z-[100] flex flex-col gap-2">

@@ -13,8 +13,8 @@ export function Airplane() {
 
   const aircraftConfig = {
     swift: { scale: 0.5, rotation: [0, Math.PI, 0] },
-    stealth: { scale: 0.015, rotation: [0, Math.PI, 0] },
-    vtol: { scale: 1.2, rotation: [0, -Math.PI/2, 0] },
+    stealth: { scale: 0.5, rotation: [0, Math.PI, 0] },
+    vtol: { scale: 0.4, rotation: [0, Math.PI, 0] },
   }[aircraftDef.id] || { scale: 0.5, rotation: [0, Math.PI, 0] };
 
   return (
