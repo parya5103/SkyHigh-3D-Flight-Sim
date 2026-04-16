@@ -1,0 +1,6 @@
+{
+  "name": "SkyHigh 3D Flight Sim",
+  "description": "A professional-grade 3D flight simulator featuring real-world map data, realistic physics, and multiplayer capabilities.",
+  "requestFramePermissions": ["geolocation", "microphone"],
+  "majorCapabilities": ["3D Graphics", "Multiplayer", "Real-world Maps"]
+}
