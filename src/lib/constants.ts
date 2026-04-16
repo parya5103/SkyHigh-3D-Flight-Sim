@@ -67,8 +67,8 @@ export const AIRCRAFT_MODELS = [
     id: 'swift',
     name: 'SwiftStream II',
     description: 'Ultra-realistic private jet with balanced handling and executive interior.',
-    // Using a more reliable standard asset URL
-    url: 'https://raw.githubusercontent.com/pmndrs/drei-assets/master/airplane.glb',
+    // Using a reliable Supabase asset mirror
+    url: 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/small-plane/model.gltf',
     stats: { speed: '320 KT', agility: 'High', fuel: 'High' }
   },
   {

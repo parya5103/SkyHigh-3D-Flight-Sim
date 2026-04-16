@@ -9,7 +9,7 @@ const AI_COUNT = 15;
 
 export function AITraffic() {
   const [modelError, setModelError] = useState(false);
-  const gltf = useGLTF('https://raw.githubusercontent.com/pmndrs/drei-assets/master/airplane.glb', true, true, (error) => {
+  const gltf = useGLTF('https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/small-plane/model.gltf', true, true, (error) => {
     console.error("AI Traffic Model Load Error:", error);
     setModelError(true);
   });
@@ -80,4 +80,4 @@ export function AITraffic() {
   );
 }
 
-useGLTF.preload('https://raw.githubusercontent.com/pmndrs/drei-assets/master/airplane.glb');
+useGLTF.preload('https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/small-plane/model.gltf');
