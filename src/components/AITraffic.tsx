@@ -1,4 +1,4 @@
-import { useRef, useMemo, useEffect } from 'react';
+import { useRef, useMemo, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF, Instance, Instances } from '@react-three/drei';
 import * as THREE from 'three';
@@ -8,7 +8,12 @@ import { useGameStore } from '../store/gameStore';
 const AI_COUNT = 15;
 
 export function AITraffic() {
-  const { scene } = useGLTF('https://cdn.jsdelivr.net/gh/pmndrs/drei-assets@master/airplane.glb');
+  const [modelError, setModelError] = useState(false);
+  const gltf = useGLTF('https://raw.githubusercontent.com/pmndrs/drei-assets/master/airplane.glb', true, true, (error) => {
+    console.error("AI Traffic Model Load Error:", error);
+    setModelError(true);
+  });
+  
   const isPlaying = useGameStore((state) => state.isPlaying);
   const setAITraffic = useGameStore((state) => state.setAITraffic);
 
@@ -36,13 +41,9 @@ export function AITraffic() {
   useFrame((state, delta) => {
     if (!isPlaying) return;
 
-    const trafficData: any[] = [];
-
-    aiState.forEach((ai, i) => {
-      // Basic linear movement
+    aiState.forEach((ai) => {
       ai.position.addScaledVector(ai.velocity, delta);
 
-      // Boundaries - loop back
       if (ai.position.length() > 30000) {
         ai.position.set(
           (Math.random() - 0.5) * 10000,
@@ -51,30 +52,24 @@ export function AITraffic() {
         );
       }
 
-      // Update visual rotation based on velocity
       ai.rotation.y = Math.atan2(ai.velocity.x, ai.velocity.z);
-
-      trafficData.push({
-        id: ai.id,
-        type: ai.type,
-        position: [ai.position.x, ai.position.y, ai.position.z],
-        rotation: [ai.rotation.x, ai.rotation.y, ai.rotation.z],
-        speed: ai.velocity.length(),
-      });
     });
-
-    // Update global store for UI tracking (radar etc)
-    // setAITraffic(trafficData); // Can be expensive if done every frame, let's optimize if needed
   });
 
   return (
     <group ref={instancesRef}>
-      {aiState.map((ai) => (
+      {aiState.map((ai, i) => (
         <group key={ai.id} position={ai.position} rotation={ai.rotation} scale={ai.type === 'AIRLINER' ? 5 : 2}>
-           <primitive object={scene.clone()} />
-           {/* Add a blinking beacon light for realism */}
+           {!modelError && gltf ? (
+              <primitive object={gltf.scene.clone()} />
+           ) : (
+              <mesh>
+                 <boxGeometry args={[1, 0.5, 3]} />
+                 <meshStandardMaterial color={ai.type === 'AIRLINER' ? "white" : "orange"} />
+              </mesh>
+           )}
            <pointLight 
-              color={Math.random() > 0.5 ? "red" : "green"} 
+              color={i % 2 === 0 ? "red" : "green"} 
               intensity={10} 
               distance={100} 
               position={[2, 0.5, 0]} 
@@ -85,4 +80,4 @@ export function AITraffic() {
   );
 }
 
-useGLTF.preload('https://cdn.jsdelivr.net/gh/pmndrs/drei-assets@master/airplane.glb');
+useGLTF.preload('https://raw.githubusercontent.com/pmndrs/drei-assets/master/airplane.glb');

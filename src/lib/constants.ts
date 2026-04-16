@@ -67,21 +67,22 @@ export const AIRCRAFT_MODELS = [
     id: 'swift',
     name: 'SwiftStream II',
     description: 'Ultra-realistic private jet with balanced handling and executive interior.',
-    url: 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/small-plane/model.gltf',
+    // Using a more reliable standard asset URL
+    url: 'https://raw.githubusercontent.com/pmndrs/drei-assets/master/airplane.glb',
     stats: { speed: '320 KT', agility: 'High', fuel: 'High' }
   },
   {
     id: 'stealth',
     name: 'Ghost-V Raptor',
     description: 'Meshy-AI optimized stealth interceptor for high-altitude reconnaissance.',
-    url: 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/space-fighter/model.gltf', 
+    url: 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/low-poly-spaceship/model.gltf', 
     stats: { speed: 'Mach 2.2', agility: 'Extreme', fuel: 'Low' }
   },
   {
     id: 'vtol',
     name: 'Atlas Heavy-Lift',
     description: 'Heavy duty VTOL transport designed for long-range cargo delivery.',
-    url: 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/vtol/model.gltf',
+    url: 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/helicopter/model.gltf',
     stats: { speed: '180 KT', agility: 'Low', fuel: 'Ultra' }
   }
 ];

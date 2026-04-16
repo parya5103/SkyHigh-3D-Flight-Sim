@@ -1,6 +1,6 @@
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { Sky, PointerLockControls, KeyboardControls, Environment, Stars, PerspectiveCamera } from '@react-three/drei';
-import { Suspense, useMemo } from 'react';
+import { Suspense, useMemo, useRef } from 'react';
 import { FlightPhysics } from './FlightPhysics';
 import { Airplane } from './Airplane';
 import { MapLayer } from './MapLayer';
@@ -9,8 +9,12 @@ import { AITraffic } from './AITraffic';
 import { MissionManager } from './MissionManager';
 import { useGameStore } from '../store/gameStore';
 
+import { Atmosphere } from './Atmosphere';
+import { SoundEngine } from './SoundEngine';
+
 export function FlightScene() {
   const isPlaying = useGameStore((state) => state.isPlaying);
+  const telemetry = useGameStore((state) => state.telemetry);
 
   const keyMap = useMemo(() => [
     { name: 'throttleUp', keys: ['Shift'] },
@@ -26,16 +30,13 @@ export function FlightScene() {
   ], []);
 
   return (
-    <div className="w-full h-full bg-slate-900 overflow-hidden">
+    <div className="w-full h-full bg-[#05070A] overflow-hidden">
+      <SoundEngine />
       <KeyboardControls map={keyMap}>
         <Canvas shadows dpr={[1, 2]}>
           <Suspense fallback={null}>
             {/* Environment */}
-            <Sky distance={450000} sunPosition={[0, 1, 0]} inclination={0} azimuth={0.25} />
-            <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-            <Environment preset="night" />
-            <ambientLight intensity={0.2} />
-            <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
+            <Atmosphere />
 
             {/* Flight Core */}
             <FlightPhysics>
@@ -43,8 +44,14 @@ export function FlightScene() {
               <Weather />
               <AITraffic />
               <MissionManager />
-              {/* Follow Camera */}
-              <PerspectiveCamera makeDefault position={[0, 5, 15]} fov={75} />
+              
+              {/* Follow Camera with Shake Effect */}
+              <CameraRig 
+                speed={telemetry.speed} 
+                isPlaying={isPlaying} 
+                pitch={telemetry.pitch}
+                roll={telemetry.roll}
+              />
             </FlightPhysics>
 
             {/* World */}
@@ -56,13 +63,41 @@ export function FlightScene() {
       </KeyboardControls>
       
       {!isPlaying && (
-         <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
-            <div className="text-white text-center">
-               <h2 className="text-4xl font-bold mb-4">Click to Start Flight</h2>
-               <p className="text-slate-300">Controls: WASD + Shift/Ctrl</p>
+         <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-xl z-50">
+            <div className="text-white text-center animate-pulse">
+               <h2 className="text-xl font-mono tracking-[0.4em] uppercase opacity-50 mb-2">System Diagnostic</h2>
+               <div className="h-0.5 w-64 bg-white/20 mx-auto mb-8" />
+               <p className="text-sm font-mono tracking-widest text-[#00E5FF]">CLICK TO ENGAGE SIMULATION</p>
             </div>
          </div>
       )}
     </div>
+  );
+}
+
+function CameraRig({ speed, isPlaying, pitch, roll }: { speed: number, isPlaying: boolean, pitch: number, roll: number }) {
+  const cameraRef = useRef<any>(null);
+
+  useFrame((state) => {
+    if (!isPlaying) return;
+    
+    // Calculate shake intensity based on speed (turbulence simulation)
+    const shakeIntensity = Math.min(0.05, speed / 5000);
+    const time = state.clock.getElapsedTime();
+    
+    state.camera.position.x += Math.sin(time * 20) * shakeIntensity;
+    state.camera.position.y += Math.cos(time * 25) * shakeIntensity;
+    
+    // Smooth Look (Subtle lag/inertia) - actually PerspectiveCamera in FlightPhysics handles look
+    // But we can add micro-adjustments here
+  });
+
+  return (
+    <PerspectiveCamera 
+      ref={cameraRef}
+      makeDefault 
+      position={[0, 5, 12]} 
+      fov={75} 
+    />
   );
 }

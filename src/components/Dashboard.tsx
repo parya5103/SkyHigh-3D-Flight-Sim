@@ -1,7 +1,7 @@
 import { useGameStore } from '../store/gameStore';
 import { CITIES, MISSIONS, AIRCRAFT_MODELS } from '../lib/constants';
 import { MapPin, Plane, Play, Globe, Settings, Users, Navigation, Trophy, Package, LifeBuoy, Rocket, Zap, TrendingUp, DollarSign } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 
 export function Dashboard() {
@@ -9,6 +9,8 @@ export function Dashboard() {
   const selectedCity = useGameStore((state) => state.selectedCity);
   const selectedAircraftId = useGameStore((state) => state.selectedAircraftId);
   const activeMissionId = useGameStore((state) => state.mission.activeId);
+  const user = useGameStore((state) => state.user);
+
   const setCity = useGameStore((state) => state.setCity);
   const setAircraft = useGameStore((state) => state.setAircraft);
   const setPlaying = useGameStore((state) => state.setPlaying);
@@ -20,258 +22,251 @@ export function Dashboard() {
   if (isPlaying) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[#05070A] text-[#F8FAFC] font-sans selection:bg-[#00E5FF]/30">
-      <div className="flex h-full">
-        {/* Left Nav Strip */}
-        <div className="w-20 border-r border-[#00E5FF]/10 flex flex-col items-center py-8 gap-8 bg-black/40">
-           <div className="p-3 bg-[#00E5FF] rounded shadow-lg shadow-[#00E5FF]/20">
-              <Plane className="text-black" />
-           </div>
-           <div className="flex-1 flex flex-col gap-6">
-              <NavButton 
-                icon={<Globe size={20} />} 
-                active={activeTab === 'cities'} 
-                onClick={() => setActiveTab('cities')}
-              />
-              <NavButton 
-                icon={<Rocket size={20} />} 
-                active={activeTab === 'aircraft'} 
-                onClick={() => setActiveTab('aircraft')}
-              />
-              <NavButton 
-                icon={<Trophy size={20} />} 
-                active={activeTab === 'missions'} 
-                onClick={() => setActiveTab('missions')}
-              />
-              <NavButton 
-                icon={<DollarSign size={20} />} 
-                active={activeTab === 'store'} 
-                onClick={() => setActiveTab('store')}
-              />
-              <NavButton icon={<Users size={20} />} />
-              <NavButton icon={<Settings size={20} />} />
-           </div>
-           <div className="text-[10px] font-mono rotate-180 writing-mode-vertical opacity-20 py-4 tracking-widest">
-              SIM_PRO_X_v1.0
-           </div>
-        </div>
+    <div className="fixed inset-0 z-[100] bg-[#05070A] text-[#F8FAFC] font-sans overflow-hidden">
+      {/* Background Graphic (MSFS Ambience) */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-r from-[#05070A] via-transparent to-[#05070A] z-10" />
+        <img 
+          src={`https://picsum.photos/seed/flight-sim-12/1920/1080?blur=10`} 
+          className="w-full h-full object-cover grayscale" 
+          referrerPolicy="no-referrer"
+        />
+      </div>
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-           {/* Top Header */}
-            <header className="h-20 border-b border-[#00E5FF]/10 flex items-center justify-between px-12 bg-black/20 backdrop-blur-sm">
-               <div className="flex flex-col">
-                  <h1 className="text-lg font-bold tracking-widest uppercase italic text-[#00E5FF]">SkyHigh Command</h1>
-                  <p className="text-[10px] text-white/40 tracking-widest uppercase">Ops Center // Growth Phase 2</p>
-               </div>
-               
-               {/* User Progression Metrics */}
-               <div className="flex items-center gap-10">
-                  <HeaderMetric label="Level" value={userMetrics.level} />
-                  <HeaderMetric label="Experience" value={`${userMetrics.xp} XP`} />
-                  <HeaderMetric label="Credits" value={`${userMetrics.credits.toLocaleString()} CR`} />
-               </div>
+      <div className="relative h-full flex flex-col z-20">
+        {/* Top Precision Bar */}
+        <header className="h-20 border-b border-white/5 flex items-center justify-between px-12 bg-black/40 backdrop-blur-xl">
+           <div className="flex items-center gap-12">
+              <div className="flex flex-col">
+                 <h1 className="text-xl font-bold tracking-[0.3em] uppercase italic text-white">SKYHIGH_SIM</h1>
+                 <span className="text-[9px] font-mono text-[#00E5FF] tracking-widest opacity-60">GLOBAL_OPERATIONS_CENTER // v4.0.2</span>
+              </div>
+              
+              <nav className="flex gap-8">
+                 <TopNavLink active={activeTab === 'cities'} label="World Map" onClick={() => setActiveTab('cities')} />
+                 <TopNavLink active={activeTab === 'aircraft'} label="Hangar" onClick={() => setActiveTab('aircraft')} />
+                 <TopNavLink active={activeTab === 'missions'} label="Activities" onClick={() => setActiveTab('missions')} />
+                 <TopNavLink active={activeTab === 'store'} label="Marketplace" onClick={() => setActiveTab('store')} />
+              </nav>
+           </div>
+           
+           <div className="flex items-center gap-12">
+              <div className="flex gap-8">
+                 <HeaderMetric label="RANK" value={`LVL ${userMetrics.level}`} />
+                 <HeaderMetric label="BALANCE" value={`${userMetrics.credits.toLocaleString()} CR`} />
+              </div>
+              
+              <div className="flex items-center gap-4 border-l border-white/10 pl-12">
+                 <div className="text-right">
+                    <div className="text-[10px] font-bold text-white uppercase">{user?.displayName || 'Ghost Pilot'}</div>
+                    <div className="text-[8px] font-mono text-white/40 uppercase tracking-tighter">Status: Authorized</div>
+                 </div>
+                 <div className="w-10 h-10 rounded-full border border-[#00E5FF]/40 bg-[#00E5FF]/10 flex items-center justify-center">
+                    <Users size={18} className="text-[#00E5FF]" />
+                 </div>
+              </div>
+           </div>
+        </header>
 
-               <div className="flex items-center gap-6">
-                  {activeMissionId && (
-                    <div className="px-4 py-1.5 border border-[#00E5FF]/40 bg-[#00E5FF]/10 text-[#00E5FF] text-[10px] font-bold uppercase tracking-widest">
-                       Active: {MISSIONS.find(m => m.id === activeMissionId)?.title}
+        {/* Dynamic Main Content */}
+        <main className="flex-1 flex overflow-hidden">
+           {/* Left Pane: Visual Info / Map */}
+           <div className="w-1/2 p-20 flex flex-col justify-end relative">
+              <AnimatePresence mode="wait">
+                 {activeTab === 'cities' && selectedCity && (
+                   <motion.div 
+                     key="city-info"
+                     initial={{ opacity: 0, x: -20 }}
+                     animate={{ opacity: 1, x: 0 }}
+                     exit={{ opacity: 0, x: -20 }}
+                     className="max-w-md"
+                   >
+                      <h2 className="text-7xl font-black italic tracking-tighter uppercase mb-2">{selectedCity.name}</h2>
+                      <div className="flex items-center gap-4 text-[#00E5FF] font-mono text-xs tracking-widest uppercase mb-8">
+                         <MapPin size={14} />
+                         <span>{selectedCity.lat.toFixed(4)}N / {selectedCity.lng.toFixed(4)}W</span>
+                      </div>
+                      <p className="text-white/40 text-sm leading-relaxed mb-12">
+                         Operational sector confirmed. Regional weather data synced via satellite telemetry. 
+                         Ready for immediate deployment into high-fidelity geographical mapping.
+                      </p>
+                      <div className="grid grid-cols-2 gap-4">
+                         <div className="p-4 border border-white/5 bg-white/5">
+                            <div className="text-[8px] uppercase tracking-widest text-[#00E5FF] mb-1">Elevation</div>
+                            <div className="text-xl font-bold uppercase">{(selectedCity as any).elevation}M MSL</div>
+                         </div>
+                         <div className="p-4 border border-white/5 bg-white/5">
+                            <div className="text-[8px] uppercase tracking-widest text-[#00E5FF] mb-1">Local Time</div>
+                            <div className="text-xl font-bold uppercase">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                         </div>
+                      </div>
+                   </motion.div>
+                 )}
+
+                 {activeTab === 'aircraft' && (
+                   <motion.div 
+                     key="aircraft-info"
+                     initial={{ opacity: 0, x: -20 }}
+                     animate={{ opacity: 1, x: 0 }}
+                     className="max-w-md"
+                   >
+                      <h2 className="text-7xl font-black italic tracking-tighter uppercase mb-2">Hangar</h2>
+                      <div className="text-[#00E5FF] font-mono text-xs tracking-widest uppercase mb-8">
+                         Fleet Management System // Service Phase
+                      </div>
+                      <p className="text-white/40 text-sm leading-relaxed mb-12">
+                         Select your vessel for the upcoming operation. All aircraft are pre-flight checked and fueled 
+                         according to simulation parameters.
+                      </p>
+                      <div className="w-full aspect-video bg-white/5 border border-white/5 relative overflow-hidden flex items-center justify-center p-12">
+                         <img 
+                           src={`https://picsum.photos/seed/${selectedAircraftId}/800/600`} 
+                           className="w-full h-full object-contain mix-blend-lighten" 
+                           referrerPolicy="no-referrer"
+                         />
+                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      </div>
+                   </motion.div>
+                 )}
+              </AnimatePresence>
+           </div>
+
+           {/* Right Pane: Controls / Lists */}
+           <div className="w-1/2 bg-black/40 backdrop-blur-3xl border-l border-white/5 flex flex-col">
+              <div className="flex-1 overflow-y-auto p-12">
+                 {activeTab === 'cities' && (
+                    <div className="grid grid-cols-1 gap-2">
+                       {CITIES.map((city) => (
+                          <button
+                             key={city.name}
+                             onClick={() => setCity(city)}
+                             className={`group flex items-center justify-between p-6 transition-all duration-300 ${
+                                selectedCity?.name === city.name ? 'bg-[#00E5FF] text-black' : 'hover:bg-white/5 text-white/60 hover:text-white'
+                             }`}
+                          >
+                             <div className="flex flex-col items-start">
+                                <span className={`text-[9px] font-mono uppercase tracking-widest ${selectedCity?.name === city.name ? 'text-black/60' : 'text-[#00E5FF]'}`}>Sector Code_{city.name.substring(0, 3).toUpperCase()}</span>
+                                <h3 className="text-xl font-bold uppercase tracking-tight">{city.name}</h3>
+                             </div>
+                             <div className="flex items-center gap-4">
+                                <span className="text-[10px] font-mono opacity-40">{city.lat.toFixed(2)}N</span>
+                                <Navigation size={20} className={selectedCity?.name === city.name ? 'rotate-45' : 'opacity-20'} />
+                             </div>
+                          </button>
+                       ))}
                     </div>
-                  )}
-                  <div className="w-2 h-2 rounded-full bg-[#00E5FF] animate-pulse" />
-               </div>
-            </header>
+                 )}
 
-            {/* Content Grid */}
-            <main className="flex-1 overflow-y-auto grid grid-cols-12 gap-8 p-12">
-               {activeTab === 'store' && (
-                  <div className="col-span-12 flex flex-col gap-8">
-                     <div className="flex flex-col gap-2">
-                        <h2 className="text-4xl font-black tracking-tighter uppercase italic text-white underline decoration-[#00E5FF]/20">Pro Marketplace</h2>
-                        <p className="text-[#00E5FF] text-xs font-mono tracking-widest uppercase">Optimize retention via premium assets</p>
-                     </div>
+                 {activeTab === 'aircraft' && (
+                    <div className="grid grid-cols-1 gap-3">
+                       {AIRCRAFT_MODELS.map((aircraft) => (
+                          <button
+                             key={aircraft.id}
+                             onClick={() => setAircraft(aircraft.id)}
+                             className={`group flex items-center gap-6 p-6 border transition-all duration-300 text-left ${
+                                selectedAircraftId === aircraft.id ? 'border-[#00E5FF] bg-[#00E5FF]/5' : 'border-white/5 hover:border-white/20'
+                             }`}
+                          >
+                             <div className="w-20 h-12 bg-white/5 flex items-center justify-center">
+                                <Plane size={24} className={selectedAircraftId === aircraft.id ? 'text-[#00E5FF]' : 'opacity-10'} />
+                             </div>
+                             <div className="flex-1">
+                                <h3 className="text-lg font-bold uppercase tracking-tight">{aircraft.name}</h3>
+                                <div className="flex gap-4 mt-1">
+                                   <AircraftStat label="SPE" value={aircraft.stats.speed} />
+                                   <AircraftStat label="AGI" value={aircraft.stats.agility} />
+                                </div>
+                             </div>
+                             {selectedAircraftId === aircraft.id && <div className="w-2 h-2 rounded-full bg-[#00E5FF] shadow-[0_0_10px_#00E5FF]" />}
+                          </button>
+                       ))}
+                    </div>
+                 )}
 
-                     <div className="grid grid-cols-3 gap-6">
-                        <StoreCard 
-                          title="Premium Fuel" 
-                          desc="Unlimited flight range for 24h. No re-fueling required." 
-                          price="4,500 CR" 
-                          icon={<Zap className="text-yellow-400" />}
-                        />
-                        <StoreCard 
-                          title="XP Booster" 
-                          desc="Double XP gain for missions." 
-                          price="2,000 CR" 
-                          icon={<TrendingUp className="text-[#00E5FF]" />}
-                        />
-                        <StoreCard 
-                          title="Elite Skin" 
-                          desc="Exclusive 24k gold skin for aircraft." 
-                          price="15,000 CR" 
-                          icon={<DollarSign className="text-amber-500" />}
-                        />
-                     </div>
-                  </div>
-               )}
+                 {activeTab === 'missions' && (
+                    <div className="space-y-4">
+                       {MISSIONS.map((mission) => (
+                          <button
+                             key={mission.id}
+                             onClick={() => {
+                                startMission(mission.id);
+                                if (!selectedCity) setCity(CITIES[0]);
+                             }}
+                             className={`group block w-full text-left p-8 border border-white/5 hover:border-[#00E5FF]/40 transition-all ${
+                                activeMissionId === mission.id ? 'bg-[#00E5FF]/5 border-[#00E5FF]/40' : 'hover:bg-white/5'
+                             }`}
+                          >
+                             <div className="flex justify-between items-start mb-4">
+                                <h3 className="text-2xl font-black uppercase italic tracking-tighter">{mission.title}</h3>
+                                <span className="text-[10px] px-2 py-0.5 bg-white/10 text-white font-mono">{mission.type}</span>
+                             </div>
+                             <p className="text-white/40 text-xs mb-8 line-clamp-2">{mission.description}</p>
+                             <div className="flex justify-between items-end">
+                                <div className="flex gap-12">
+                                   <div className="flex flex-col">
+                                      <span className="text-[8px] text-[#00E5FF] uppercase tracking-widest mb-1">Reward</span>
+                                      <span className="text-lg font-bold">{mission.reward} CR</span>
+                                   </div>
+                                   <div className="flex flex-col">
+                                      <span className="text-[8px] text-[#00E5FF] uppercase tracking-widest mb-1">Time Limit</span>
+                                      <span className="text-lg font-bold">{mission.timeLimit}S</span>
+                                   </div>
+                                </div>
+                                <div className="p-3 bg-white/5 group-hover:bg-[#00E5FF] group-hover:text-black transition-colors rounded-full">
+                                   <Play size={16} fill="currentColor" />
+                                </div>
+                             </div>
+                          </button>
+                       ))}
+                    </div>
+                 )}
+              </div>
 
-               {activeTab === 'cities' && (
-                  <div className="col-span-8 flex flex-col gap-6">
-                     <div className="flex items-baseline justify-between">
-                        <h2 className="text-2xl font-light tracking-widest uppercase">Select Target City</h2>
-                        <span className="text-[10px] opacity-40 uppercase tracking-widest">{CITIES.length} Sectors Scanned</span>
-                     </div>
-                     
-                     <div className="grid grid-cols-2 gap-4">
-                        {CITIES.map((city) => (
-                           <button
-                              key={city.name}
-                              onClick={() => setCity(city)}
-                              className={`group relative h-40 rounded bg-[#0F172A]/40 border transition-all duration-300 ${
-                                 selectedCity?.name === city.name ? 'border-[#00E5FF] ring-1 ring-[#00E5FF]/20' : 'border-white/5 hover:border-[#00E5FF]/40'
-                              }`}
-                           >
-                              <img 
-                                src={`https://picsum.photos/seed/${city.name}/600/400`} 
-                                className="absolute inset-0 w-full h-full object-cover grayscale opacity-20 group-hover:opacity-40 transition-all duration-500" 
-                                referrerPolicy="no-referrer"
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                              <div className="absolute bottom-6 left-6 text-left">
-                                 <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-[#00E5FF] text-[10px] font-mono uppercase tracking-widest">{city.lat.toFixed(2)}N {city.lng.toFixed(2)}W</span>
-                                 </div>
-                                 <h3 className="text-xl font-bold tracking-widest uppercase">{city.name}</h3>
-                              </div>
-                              {selectedCity?.name === city.name && (
-                                 <motion.div 
-                                    layoutId="selector" 
-                                    className="absolute top-4 right-4 w-6 h-6 bg-[#00E5FF] rounded-sm flex items-center justify-center shadow-lg shadow-[#00E5FF]/40"
-                                 >
-                                    <Play size={12} className="text-black fill-current ml-0.5" />
-                                 </motion.div>
-                              )}
-                           </button>
-                        ))}
-                     </div>
-                  </div>
-               )}
+              {/* Bottom Action Pane */}
+              <div className="h-40 p-12 border-t border-white/5 bg-black/20 flex items-center justify-between">
+                 <div className="flex flex-col">
+                    <span className="text-[9px] font-mono text-[#00E5FF] uppercase tracking-widest mb-1">Pre-Flight Summary</span>
+                    <div className="flex gap-6 items-baseline">
+                       <span className="text-2xl font-bold uppercase">{selectedCity?.name || "No Sector Selected"}</span>
+                       <span className="text-sm opacity-40 font-mono">/</span>
+                       <span className="text-sm opacity-40 uppercase">{AIRCRAFT_MODELS.find(a => a.id === selectedAircraftId)?.name}</span>
+                    </div>
+                 </div>
 
-               {activeTab === 'aircraft' && (
-                  <div className="col-span-8 flex flex-col gap-6">
-                     <div className="flex items-baseline justify-between">
-                        <h2 className="text-2xl font-light tracking-widest uppercase">Select Aircraft</h2>
-                        <span className="text-[10px] opacity-40 uppercase tracking-widest">{AIRCRAFT_MODELS.length} Vessels in Hangar</span>
-                     </div>
-                     
-                     <div className="grid grid-cols-1 gap-4">
-                        {AIRCRAFT_MODELS.map((aircraft) => (
-                           <button
-                              key={aircraft.id}
-                              onClick={() => setAircraft(aircraft.id)}
-                              className={`group relative p-8 rounded bg-[#0F172A]/40 border transition-all duration-300 text-left flex items-center gap-8 ${
-                                 selectedAircraftId === aircraft.id ? 'border-[#00E5FF] ring-1 ring-[#00E5FF]/20' : 'border-white/5 hover:border-[#00E5FF]/40'
-                              }`}
-                           >
-                              <div className="w-32 h-20 bg-black/40 rounded flex items-center justify-center border border-white/5 group-hover:border-[#00E5FF]/40 overflow-hidden">
-                                 <Rocket size={24} className={selectedAircraftId === aircraft.id ? 'text-[#00E5FF]' : 'opacity-20'} />
-                              </div>
-                              <div className="flex-1">
-                                 <h3 className="text-xl font-bold tracking-widest uppercase mb-1">{aircraft.name}</h3>
-                                 <p className="text-[11px] opacity-60 mb-4">{aircraft.description}</p>
-                                 <div className="flex gap-4">
-                                    <AircraftStat label="SPE" value={aircraft.stats.speed} />
-                                    <AircraftStat label="AGI" value={aircraft.stats.agility} />
-                                    <AircraftStat label="FUE" value={aircraft.stats.fuel} />
-                                 </div>
-                              </div>
-                              <div className="text-[#00E5FF]">
-                                 {selectedAircraftId === aircraft.id ? <Check size={20} /> : <div className="w-5 h-5 border border-white/10 rounded-full" />}
-                              </div>
-                           </button>
-                        ))}
-                     </div>
-                  </div>
-               )}
-
-               {activeTab === 'missions' && (
-                  <div className="col-span-8 flex flex-col gap-6">
-                     <div className="flex items-baseline justify-between">
-                        <h2 className="text-2xl font-light tracking-widest uppercase">Mission Board</h2>
-                        <span className="text-[10px] opacity-40 uppercase tracking-widest">{MISSIONS.length} Ops Available</span>
-                     </div>
-                     
-                     <div className="flex flex-col gap-4">
-                        {MISSIONS.map((mission) => (
-                           <button
-                              key={mission.id}
-                              onClick={() => {
-                                 startMission(mission.id);
-                                 if (!selectedCity) setCity(CITIES[0]); // Default city if none selected
-                                 setActiveTab('cities'); // Redirect to city to pick destination or start
-                              }}
-                              className={`group relative p-6 rounded bg-[#0F172A]/40 border transition-all duration-300 flex items-center gap-6 ${
-                                 activeMissionId === mission.id ? 'border-[#00E5FF] ring-1 ring-[#00E5FF]/20' : 'border-white/5 hover:border-[#00E5FF]/40'
-                              }`}
-                           >
-                              <div className="w-12 h-12 rounded bg-[#00E5FF]/10 flex items-center justify-center text-[#00E5FF]">
-                                 {mission.type === 'LANDING' && <Plane size={24} />}
-                                 {mission.type === 'CARGO' && <Package size={24} />}
-                                 {mission.type === 'RESCUE' && <LifeBuoy size={24} />}
-                              </div>
-                              <div className="flex-1 text-left">
-                                 <h3 className="text-lg font-bold tracking-widest uppercase mb-1">{mission.title}</h3>
-                                 <p className="text-[11px] opacity-60 line-clamp-1">{mission.description}</p>
-                              </div>
-                              <div className="text-right">
-                                 <div className="text-[10px] text-[#00E5FF] font-mono mb-1">REWARD: {mission.reward} CR</div>
-                                 <div className="text-[9px] opacity-40">LIMIT: {mission.timeLimit}s</div>
-                              </div>
-                           </button>
-                        ))}
-                     </div>
-                  </div>
-               )}
-
-               {/* Right Column - Stats & Action */}
-               <div className="col-span-4 flex flex-col gap-6">
-                  <div className="glass-panel p-8 shadow-2xl">
-                     <h3 className="text-[10px] uppercase tracking-widest opacity-40 mb-6 font-mono text-[#64748B]">Pre-Flight Telemetry</h3>
-                     
-                     <div className="space-y-6">
-                        <StatusRow label="Vessel" value={AIRCRAFT_MODELS.find(a => a.id === selectedAircraftId)?.name || "Unknown"} />
-                        <StatusRow label="Mode" value={activeMissionId ? "Mission Protocol" : "Free Flight"} />
-                        <StatusRow label="Physics" value="Aero Balancing" />
-                        <StatusRow label="Region" value={selectedCity?.name || "Unselected"} />
-                     </div>
-
-                     <div className="mt-12">
-                        <button
-                           disabled={!selectedCity && !activeMissionId}
-                           onClick={() => setPlaying(true)}
-                           className="w-full py-5 bg-[#00E5FF] hover:bg-[#00E5FF]/80 disabled:bg-white/5 disabled:text-white/20 text-black font-black text-sm tracking-[0.3em] uppercase transition-all rounded shadow-[0_0_20px_rgba(0,229,255,0.2)] flex items-center justify-center gap-4 group"
-                        >
-                           Engage Simulation
-                           <Play size={16} className="fill-current group-hover:translate-x-1 transition-transform" />
-                        </button>
-                     </div>
-                  </div>
-
-                  <div className="flex-1 glass-panel p-6 font-mono text-[10px] flex flex-col gap-4">
-                     <div className="flex items-center gap-2 opacity-40">
-                        <Navigation size={12} />
-                        <span>CONSOLE_LOG</span>
-                     </div>
-                     <div className="space-y-1 opacity-60 text-[#64748B]">
-                        <p>{"> "} INIT_MAP_ENGINE... [OK]</p>
-                        <p>{"> "} SYNC_MULTI_LAYER... [OK]</p>
-                        <p className="text-[#00E5FF] animate-pulse">{"> "} READY_FOR_FLIGHT_EXECUTION</p>
-                     </div>
-                  </div>
-               </div>
-            </main>
-         </div>
+                 <button
+                    disabled={!selectedCity}
+                    onClick={() => setPlaying(true)}
+                    className="group relative h-16 px-12 bg-white text-black font-black uppercase tracking-[0.4em] italic text-sm hover:scale-105 active:scale-95 transition-all shadow-2xl disabled:opacity-20 disabled:grayscale overflow-hidden"
+                 >
+                    <div className="relative z-10 flex items-center gap-4">
+                       Fly Now <Play size={16} fill="currentColor" />
+                    </div>
+                    <div className="absolute inset-x-0 bottom-0 h-1 bg-[#00E5FF]" />
+                    {/* Hover Glow */}
+                    <div className="absolute inset-0 bg-[#00E5FF] translate-y-full group-hover:translate-y-[90%] transition-transform opacity-30 blur-xl" />
+                 </button>
+              </div>
+           </div>
+        </main>
       </div>
     </div>
+  );
+}
+
+function TopNavLink({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button 
+      onClick={onClick}
+      className={`h-full flex flex-col justify-center relative transition-all group ${active ? 'text-white' : 'text-white/40 hover:text-white'}`}
+    >
+       <span className="text-xs font-bold uppercase tracking-widest">{label}</span>
+       {active && (
+          <motion.div 
+            layoutId="nav-underline" 
+            className="absolute bottom-0 inset-x-0 h-1 bg-[#00E5FF] shadow-[0_0_15px_#00E5FF]" 
+          />
+       )}
+    </button>
   );
 }
 
