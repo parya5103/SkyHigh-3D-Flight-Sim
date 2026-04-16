@@ -32,6 +32,12 @@ interface AIVehicle {
 interface GameState {
   isPlaying: boolean;
   isPaused: boolean;
+  user: {
+    uid: string;
+    email: string | null;
+    displayName: string | null;
+  } | null;
+  isAuthReady: boolean;
   selectedCity: { name: string; lat: number; lng: number } | null;
   selectedAircraftId: string;
   telemetry: Telemetry;
@@ -58,11 +64,16 @@ interface GameState {
   completeMission: () => void;
   failMission: () => void;
   setAITraffic: (vehicles: AIVehicle[]) => void;
+  setUser: (user: any) => void;
+  setAuthReady: (ready: boolean) => void;
+  updateUserMetrics: (metrics: Partial<GameState['userMetrics']>) => void;
 }
 
 export const useGameStore = create<GameState>((set) => ({
   isPlaying: false,
   isPaused: false,
+  user: null,
+  isAuthReady: false,
   selectedCity: null,
   selectedAircraftId: 'swift',
   telemetry: {
@@ -146,4 +157,9 @@ export const useGameStore = create<GameState>((set) => ({
     }));
   },
   setAITraffic: (vehicles) => set({ aiTraffic: vehicles }),
+  setUser: (user) => set({ user }),
+  setAuthReady: (ready) => set({ isAuthReady: ready }),
+  updateUserMetrics: (metrics) => set((state) => ({
+    userMetrics: { ...state.userMetrics, ...metrics }
+  })),
 }));

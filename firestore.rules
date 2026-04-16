@@ -1,0 +1,73 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: users
+// Document ID: {userId} (Auth UID)
+// Fields:
+//   - uid: string (required) - Firebase Auth UID
+//   - displayName: string (optional) 
+//   - xp: number (required) - Experience points
+//   - level: number (required) - Current pilot level
+//   - credits: number (required) - Game currency
+//   - totalFlightTime: number (optional) - Minutes flown
+//   - lastUpdated: string/timestamp (optional)
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "aaryapratik@gmail.com" && request.auth.token.email_verified == true));
+    }
+    
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'xp', 'level', 'credits']) &&
+             data.uid is string &&
+             data.xp is number && data.xp >= 0 &&
+             data.level is number && data.level >= 1 &&
+             data.credits is number && data.credits >= 0;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      // Users can read and write their own data
+      // Admins can manage all user data
+      allow read: if isOwner(userId) || isAdmin();
+      
+      allow create: if isOwner(userId) && 
+                      isValidUser(request.resource.data) &&
+                      request.resource.data.uid == request.auth.uid;
+                      
+      allow update: if (isOwner(userId) || isAdmin()) && 
+                      isValidUser(request.resource.data) &&
+                      request.resource.data.uid == resource.data.uid; // UID is immutable
+                      
+      allow delete: if isAdmin(); // Only admins can delete profiles
+    }
+
+    // Default deny for everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

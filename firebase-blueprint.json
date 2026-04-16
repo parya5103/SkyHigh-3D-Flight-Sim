@@ -1,0 +1,25 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user growth metrics and progression data.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "displayName": { "type": "string", "description": "User display name" },
+        "xp": { "type": "number", "description": "Experience points" },
+        "level": { "type": "number", "description": "Current pilot level" },
+        "credits": { "type": "number", "description": "Game currency" },
+        "totalFlightTime": { "type": "number", "description": "Total flight time in minutes" },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "xp", "level", "credits"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile document keyed by Auth UID"
+    }
+  }
+}
