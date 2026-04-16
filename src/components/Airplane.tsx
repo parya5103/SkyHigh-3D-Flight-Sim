@@ -40,6 +40,8 @@ function ModelLoader({ url, config }: { url: string, config: any }) {
       object={gltf.scene} 
       scale={config.scale} 
       rotation={config.rotation} 
+      castShadow
+      receiveShadow
     />
   );
 }
@@ -50,19 +52,19 @@ export function Airplane() {
   const group = useRef<Group>(null);
 
   const aircraftConfig = {
-    swift: { scale: 0.5, rotation: [0, Math.PI, 0] },
-    stealth: { scale: 0.8, rotation: [0, Math.PI, 0] },
-    vtol: { scale: 1.2, rotation: [0, -Math.PI/2, 0] },
-  }[aircraftDef.id] || { scale: 0.5, rotation: [0, Math.PI, 0] };
+    swift: { scale: 0.08, rotation: [0, Math.PI, 0] },
+    stealth: { scale: 0.15, rotation: [0, Math.PI, 0] },
+    vtol: { scale: 0.2, rotation: [0, 0, 0] },
+  }[aircraftDef.id] || { scale: 0.1, rotation: [0, Math.PI, 0] };
 
   return (
     <group ref={group}>
-      <ErrorBoundary fallback={<ProceduralAirplane scale={aircraftConfig.scale * 2} />}>
-        <Suspense fallback={<ProceduralAirplane scale={aircraftConfig.scale * 2} />}>
+      <ErrorBoundary fallback={<ProceduralAirplane scale={aircraftConfig.scale * 20} />}>
+        <Suspense fallback={<ProceduralAirplane scale={aircraftConfig.scale * 20} />}>
           <ModelLoader url={aircraftDef.url} config={aircraftConfig} />
         </Suspense>
       </ErrorBoundary>
-      <pointLight position={[0, 0.5, -0.5]} intensity={0.5} color="#44ff44" />
+      <pointLight position={[0, 2, 2]} intensity={2} color="#ffffff" />
     </group>
   );
 }

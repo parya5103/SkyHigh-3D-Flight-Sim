@@ -9,7 +9,7 @@ import { Suspense } from 'react';
 // AI Traffic types and their simple flight paths
 const AI_COUNT = 15;
 
-const ASSET_URL = 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/small-plane/model.gltf';
+const ASSET_URL = 'https://raw.githubusercontent.com/pmndrs/drei-assets/master/arwing.glb?v=3';
 
 function AIPlaneModel({ type }: { type: 'AIRLINER' | 'PRIVATE' }) {
   const gltf = useGLTF(ASSET_URL);

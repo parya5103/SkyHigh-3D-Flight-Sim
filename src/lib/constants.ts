@@ -1,15 +1,19 @@
 export const PLANE_STATS = {
   mass: 1200, // kg (Cessna 172 class)
   wingArea: 16.2, // m^2
-  liftCoefficientMax: 1.5,
+  wingspan: 11.0, // m
+  aspectRatio: 7.5,
+  oswaldEfficiency: 0.8,
+  liftCoefficientSlope: 5.0, // per radian
+  stallAngleDeg: 16.0,
   dragCoefficientZero: 0.025,
-  thrustMax: 4500, // Newtons
+  thrustMax: 5500, // Newtons
   maxThrottle: 1.0,
   minThrottle: 0.0,
   controlSensitivity: {
-    pitch: 0.5,
-    roll: 0.8,
-    yaw: 0.3,
+    pitch: 0.8,
+    roll: 1.2,
+    yaw: 0.5,
   },
 };
 
@@ -58,31 +62,31 @@ export const MISSIONS = [
 ];
 
 export const AI_TYPES = {
-  AIRLINER: { label: 'Airbus A320', scale: 2.0, color: '#FFFFFF', speed: 120 },
-  PRIVATE: { label: 'Cessna 172', scale: 0.5, color: '#D48166', speed: 60 }
+  AIRLINER: { label: 'Boeing 747-8', scale: 2.0, color: '#FFFFFF', speed: 120 },
+  PRIVATE: { label: 'Beechcraft King Air', scale: 0.5, color: '#D48166', speed: 60 }
 };
 
 export const AIRCRAFT_MODELS = [
   {
     id: 'swift',
-    name: 'SwiftStream II',
-    description: 'Ultra-realistic private jet with balanced handling and executive interior.',
-    // Using a reliable Supabase asset mirror
-    url: 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/small-plane/model.gltf',
-    stats: { speed: '320 KT', agility: 'High', fuel: 'High' }
+    name: 'Boeing 747-8 Intercontinental',
+    description: 'Ultra-realistic commercial airliner with long-range performance and heavy handling characteristics.',
+    // High-poly airliner from drei-assets
+    url: 'https://raw.githubusercontent.com/pmndrs/drei-assets/master/airplane.glb',
+    stats: { speed: '540 KT', agility: 'Low', fuel: 'Ultra' }
   },
   {
     id: 'stealth',
-    name: 'Ghost-V Raptor',
-    description: 'Meshy-AI optimized stealth interceptor for high-altitude reconnaissance.',
-    url: 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/low-poly-spaceship/model.gltf', 
-    stats: { speed: 'Mach 2.2', agility: 'Extreme', fuel: 'Low' }
+    name: 'Advanced Interceptor',
+    description: 'High-agility fighter designed for extreme speeds and rapid response missions.',
+    url: 'https://raw.githubusercontent.com/pmndrs/drei-assets/master/arwing.glb', 
+    stats: { speed: 'Mach 2.2', agility: 'Maximum', fuel: 'Medium' }
   },
   {
     id: 'vtol',
-    name: 'Atlas Heavy-Lift',
-    description: 'Heavy duty VTOL transport designed for long-range cargo delivery.',
-    url: 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/helicopter/model.gltf',
-    stats: { speed: '180 KT', agility: 'Low', fuel: 'Ultra' }
+    name: 'Heavy-Lift Transport',
+    description: 'Versatile cargo transport with stable lift and reliable performance.',
+    url: 'https://raw.githubusercontent.com/pmndrs/drei-assets/master/scifi-ship.glb',
+    stats: { speed: '280 KT', agility: 'Medium', fuel: 'High' }
   }
 ];

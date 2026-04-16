@@ -20,6 +20,11 @@ async function startServer() {
 
   const PORT = 3000;
 
+  // Deployment Note: 
+  // - Vercel is recommended for frontend (built to /dist).
+  // - Render is recommended for this Node/Socket.io backend.
+  // - Ensure process.env.PORT is configured if deploying to Render.
+
   // Multiplayer logic
   const players = new Map();
 

@@ -40,63 +40,92 @@ export function FlightPhysics({ children }: { children: React.ReactNode }) {
     const rollIn = (keys.rollRight ? 1 : 0) - (keys.rollLeft ? 1 : 0);
     const yawIn = (keys.yawLeft ? 1 : 0) - (keys.yawRight ? 1 : 0);
 
-    // 2. Physics Logic
-    // Apply Rotation
+    // 2. Physics Logic - Controls
     const rotationSpeed = 1.5;
     plane.rotateX(pitchIn * PLANE_STATS.controlSensitivity.pitch * rotationSpeed * delta);
     plane.rotateZ(-rollIn * PLANE_STATS.controlSensitivity.roll * rotationSpeed * delta);
     plane.rotateY(yawIn * PLANE_STATS.controlSensitivity.yaw * rotationSpeed * delta);
 
-    // Get current vectors
+    // Aerodynamics
+    const currentSpeed = velocity.current.length();
+    const normalizeSpeed = Math.max(0.1, currentSpeed);
+
+    // Coordinate System Vectors
     const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(plane.quaternion);
     const up = new THREE.Vector3(0, 1, 0).applyQuaternion(plane.quaternion);
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(plane.quaternion);
     
-    // Speed projection on forward vector
-    const currentSpeed = velocity.current.length();
-
-    // Forces
-    // 1. Thrust
-    const thrust = forward.clone().multiplyScalar(throttleRef.current * PLANE_STATS.thrustMax * delta * 0.05);
-    velocity.current.add(thrust);
-
-    // 2. Lift & Stall Physics
-    // Cl changes with Angle of Attack (AoA)
-    // Simplified AoA check: dot product of forward and up
-    const worldUp = new THREE.Vector3(0, 1, 0);
-    const angleOfAttack = Math.asin(Math.max(-1, Math.min(1, forward.dot(worldUp))));
+    // Relative Wind (assumed to be opposite of velocity)
+    const velNorm = currentSpeed > 0.1 ? velocity.current.clone().normalize() : forward.clone();
     
-    // Stall logic: Cl drops sharply after ~15-20 degrees
-    let Cl = 0.1 + angleOfAttack * 2.0; 
-    const stallAngle = 0.35; // ~20 degrees
-    if (Math.abs(angleOfAttack) > stallAngle) {
-       Cl *= 0.2; // Stall! Loss of lift
+    // Angle of Attack (AoA)
+    // Angle between forward chord line and relative wind
+    let aoa = 0;
+    if (currentSpeed > 0.1) {
+      const aoaCos = Math.max(-1, Math.min(1, forward.dot(velNorm)));
+      aoa = Math.acos(aoaCos);
+      // Determine sign (positive if wind is coming from below)
+      const aoaSign = Math.sign(up.dot(velNorm)) * -1;
+      aoa *= aoaSign;
     }
 
-    // Ground Effect: Lift increases by up to 20% when close to ground
-    const altitudeMeters = plane.position.y - 2;
-    const groundEffect = altitudeMeters < 10 ? (1 + (1 - altitudeMeters / 10) * 0.2) : 1;
+    // 1. Lift Calculation
+    const stallAngleRad = THREE.MathUtils.degToRad(PLANE_STATS.stallAngleDeg);
+    let liftCoeff = PLANE_STATS.liftCoefficientSlope * aoa;
+    
+    // Stall Characteristics
+    let isStalling = false;
+    if (Math.abs(aoa) > stallAngleRad) {
+      isStalling = true;
+      // Sharp drop in lift after stall peak
+      const stallFactor = Math.exp(-5 * (Math.abs(aoa) - stallAngleRad));
+      liftCoeff *= 0.3 * stallFactor;
+    }
 
-    const liftMagnitude = 0.5 * 1.225 * Math.pow(currentSpeed, 2) * PLANE_STATS.wingArea * Cl * groundEffect;
-    const lift = up.clone().multiplyScalar(liftMagnitude * delta);
+    // Ground Effect
+    // Increases lift and reduces induced drag within one wingspan of ground
+    const altitudeMeters = Math.max(0.1, plane.position.y - 2);
+    const hOverB = altitudeMeters / PLANE_STATS.wingspan;
+    const groundEffectFactor = Math.max(0, Math.min(1, Math.pow((16 * hOverB) / (1 + 16 * hOverB), 2)));
+    
+    // Ground effect on lift slope
+    const geLiftSlopeBoost = hOverB < 1.0 ? 1 / (1 - 0.1 / hOverB) : 1;
+    const effectiveLiftCoeff = liftCoeff * Math.min(1.2, geLiftSlopeBoost);
+
+    const rho = 1.225; // Sea level air density
+    const liftMag = 0.5 * rho * Math.pow(currentSpeed, 2) * PLANE_STATS.wingArea * effectiveLiftCoeff;
+    
+    // Lift direction: Perpendicular to velocity and wing axis
+    const liftDir = new THREE.Vector3().crossVectors(velNorm, right).normalize();
+    const lift = liftDir.multiplyScalar(liftMag * delta);
     velocity.current.add(lift);
 
-    // 3. Drag (Parasitic + Induced)
-    // Parasitic drag ~ v^2
-    const parasiticDragCoeff = 0.02;
-    const parasiticDragMag = 0.5 * 1.225 * Math.pow(currentSpeed, 2) * parasiticDragCoeff;
+    // 2. Drag Calculation (Parasitic + Induced)
+    // Induced Drag: Di = Cl^2 / (pi * AR * e)
+    let inducedDragCoeff = (Math.pow(effectiveLiftCoeff, 2)) / (Math.PI * PLANE_STATS.aspectRatio * PLANE_STATS.oswaldEfficiency);
     
-    // Induced drag ~ Lift^2 (simplified)
-    const inducedDragMag = Math.pow(liftMagnitude, 2) * 0.000001;
+    // Ground effect significantly reduces induced drag
+    inducedDragCoeff *= groundEffectFactor;
+
+    // Stall increases drag significantly (pressure drag)
+    const stallDrag = isStalling ? Math.abs(aoa) * 0.5 : 0;
     
-    const drag = velocity.current.clone().normalize().multiplyScalar(-(parasiticDragMag + inducedDragMag) * delta);
+    const totalDragCoeff = PLANE_STATS.dragCoefficientZero + inducedDragCoeff + stallDrag;
+    const dragMag = 0.5 * rho * Math.pow(currentSpeed, 2) * PLANE_STATS.wingArea * totalDragCoeff;
+    const drag = velNorm.clone().multiplyScalar(-dragMag * delta);
     velocity.current.add(drag);
 
+    // 3. Thrust
+    const thrust = forward.clone().multiplyScalar(throttleRef.current * PLANE_STATS.thrustMax * delta);
+    velocity.current.add(thrust.divideScalar(PLANE_STATS.mass)); // Force to acceleration
+
     // 4. Gravity
-    const gravity = new THREE.Vector3(0, -9.81 * delta * 0.6, 0); // Slightly adjusted for feel
+    const gravity = new THREE.Vector3(0, -9.81 * delta, 0);
     velocity.current.add(gravity);
 
     // Apply Velocity
-    plane.position.add(velocity.current.clone().multiplyScalar(delta * 10));
+    const displacement = velocity.current.clone().multiplyScalar(delta);
+    plane.position.add(displacement);
 
     // Ground collision & Rolling
     const onGround = plane.position.y <= 2.1;
@@ -105,13 +134,13 @@ export function FlightPhysics({ children }: { children: React.ReactNode }) {
        velocity.current.y = Math.max(0, velocity.current.y);
        
        // Friction & Braking
-       const friction = keys.brake ? 0.9 : 0.98;
+       const friction = keys.brake ? 0.95 : 0.99;
        velocity.current.multiplyScalar(friction);
        
-       // Align to ground pitch if slow
-       if (currentSpeed < 10) {
-         plane.rotation.x = THREE.MathUtils.lerp(plane.rotation.x, 0, delta * 2);
-         plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, 0, delta * 2);
+       // Align to ground pitch if slow (simulating landing gear compression)
+       if (currentSpeed < 15) {
+         plane.rotation.x = THREE.MathUtils.lerp(plane.rotation.x, 0, delta * 3);
+         plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, 0, delta * 3);
        }
     }
 

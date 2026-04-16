@@ -45,7 +45,15 @@ export function Atmosphere() {
         <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
       )}
       
-      <Environment preset={sunData.isDay ? "sunset" : "night"} />
+      <Environment 
+        preset={sunData.isDay ? "sunset" : "night"} 
+        blur={0.5}
+      />
+      
+      {/* High-fidelity lighting environment (HDRI Haven inspired) */}
+      <Environment 
+        files="https://cdn.jsdelivr.net/gh/pmndrs/drei-assets@master/hdri/sky.hdr" 
+      />
       
       <ambientLight intensity={sunData.isDay ? 0.3 * sunData.intensity : 0.05} />
       

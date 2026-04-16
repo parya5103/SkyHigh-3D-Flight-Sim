@@ -11,6 +11,7 @@ import { useGameStore } from '../store/gameStore';
 
 import { Atmosphere } from './Atmosphere';
 import { SoundEngine } from './SoundEngine';
+import { ErrorBoundary } from './ErrorBoundary';
 
 export function FlightScene() {
   const isPlaying = useGameStore((state) => state.isPlaying);
@@ -34,31 +35,33 @@ export function FlightScene() {
       <SoundEngine />
       <KeyboardControls map={keyMap}>
         <Canvas shadows dpr={[1, 2]}>
-          <Suspense fallback={null}>
-            {/* Environment */}
-            <Atmosphere />
+          <ErrorBoundary fallback={<mesh><boxGeometry /><meshStandardMaterial color="red" /></mesh>}>
+            <Suspense fallback={null}>
+              {/* Environment */}
+              <Atmosphere />
 
-            {/* Flight Core */}
-            <FlightPhysics>
-              <Airplane />
-              <Weather />
-              <AITraffic />
-              <MissionManager />
-              
-              {/* Follow Camera with Shake Effect */}
-              <CameraRig 
-                speed={telemetry.speed} 
-                isPlaying={isPlaying} 
-                pitch={telemetry.pitch}
-                roll={telemetry.roll}
-              />
-            </FlightPhysics>
+              {/* Flight Core */}
+              <FlightPhysics>
+                <Airplane />
+                <Weather />
+                <AITraffic />
+                <MissionManager />
+                
+                {/* Follow Camera with Shake Effect */}
+                <CameraRig 
+                  speed={telemetry.speed} 
+                  isPlaying={isPlaying} 
+                  pitch={telemetry.pitch}
+                  roll={telemetry.roll}
+                />
+              </FlightPhysics>
 
-            {/* World */}
-            <MapLayer />
+              {/* World */}
+              <MapLayer />
 
-            <PointerLockControls />
-          </Suspense>
+              <PointerLockControls />
+            </Suspense>
+          </ErrorBoundary>
         </Canvas>
       </KeyboardControls>
       
