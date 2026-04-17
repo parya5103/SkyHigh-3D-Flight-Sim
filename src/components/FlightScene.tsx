@@ -3,7 +3,6 @@ import { Sky, PointerLockControls, KeyboardControls, Environment, Stars, Perspec
 import { Suspense, useMemo, useRef } from 'react';
 import { FlightPhysics } from './FlightPhysics';
 import { Airplane } from './Airplane';
-import { MapLayer } from './MapLayer';
 import { Weather } from './Weather';
 import { AITraffic } from './AITraffic';
 import { MissionManager } from './MissionManager';
@@ -55,9 +54,6 @@ export function FlightScene() {
                   roll={telemetry.roll}
                 />
               </FlightPhysics>
-
-              {/* World */}
-              <MapLayer />
 
               <PointerLockControls />
             </Suspense>

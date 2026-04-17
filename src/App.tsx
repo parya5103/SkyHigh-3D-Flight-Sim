@@ -3,13 +3,18 @@ import { useGameStore } from './store/gameStore';
 import { FlightScene } from './components/FlightScene';
 import { HUD } from './components/HUD';
 import { Dashboard } from './components/Dashboard';
+import { Marketplace } from './components/Marketplace';
+import { AdSense } from './components/AdSense';
+import { GlobalView } from './components/GlobalView';
 import { GrowthEngine } from './components/GrowthEngine';
 import { Login } from './components/Login';
 import { io } from 'socket.io-client';
-import { auth, db } from './lib/firebase';
+import { auth, db, handleFirestoreError, OperationType } from './lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot, getDoc, setDoc } from 'firebase/firestore';
 import { AnimatePresence, motion } from 'motion/react';
+import { useState } from 'react';
+import { ShoppingBag } from 'lucide-react';
 
 const socket = io();
 
@@ -23,6 +28,10 @@ export default function App() {
   const setUser = useGameStore((state) => state.setUser);
   const setAuthReady = useGameStore((state) => state.setAuthReady);
   const updateUserMetrics = useGameStore((state) => state.updateUserMetrics);
+  const consumeFuel = useGameStore((state) => state.consumeFuel);
+  
+  const [isMarketOpen, setMarketOpen] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState(Date.now());
   
   const addPlayer = useGameStore((state) => state.addMultiplayerPlayer);
   const removePlayer = useGameStore((state) => state.removeMultiplayerPlayer);
@@ -39,19 +48,24 @@ export default function App() {
         });
 
         // Initialize/Sync User Data from Firestore
-        const userRef = doc(db, 'users', firebaseUser.uid);
-        const docSnap = await getDoc(userRef);
+        const path = `users/${firebaseUser.uid}`;
+        try {
+          const userRef = doc(db, 'users', firebaseUser.uid);
+          const docSnap = await getDoc(userRef);
 
-        if (!docSnap.exists()) {
-          // Initialize fresh profile
-          await setDoc(userRef, {
-            uid: firebaseUser.uid,
-            xp: 0,
-            level: 1,
-            credits: 1000,
-            totalFlightTime: 0,
-            lastUpdated: new Date().toISOString()
-          });
+          if (!docSnap.exists()) {
+            await setDoc(userRef, {
+              uid: firebaseUser.uid,
+              xp: 0,
+              level: 1,
+              credits: 1000,
+              totalFlightTime: 0,
+              ownedSkins: ['default'],
+              lastUpdated: new Date().toISOString()
+            });
+          }
+        } catch (error) {
+          handleFirestoreError(error, OperationType.GET, path);
         }
       } else {
         setUser(null);
@@ -66,6 +80,7 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
 
+    const path = `users/${user.uid}`;
     const userRef = doc(db, 'users', user.uid);
     const unsubscribe = onSnapshot(userRef, (doc) => {
       if (doc.exists()) {
@@ -75,8 +90,11 @@ export default function App() {
           level: data.level,
           credits: data.credits,
           totalFlightTime: data.totalFlightTime || 0,
+          ownedSkins: data.ownedSkins || ['default'],
         });
       }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, path);
     });
 
     return () => unsubscribe();
@@ -86,17 +104,32 @@ export default function App() {
   useEffect(() => {
     if (!user || !isPlaying) return;
     
-    // In a real app we might debounce this
     const syncInterval = setInterval(async () => {
-      const userRef = doc(db, 'users', user.uid);
-      await setDoc(userRef, {
-        ...userMetrics,
-        lastUpdated: new Date().toISOString()
-      }, { merge: true });
-    }, 5000);
+      const path = `users/${user.uid}`;
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        await setDoc(userRef, {
+          ...userMetrics,
+          lastUpdated: new Date().toISOString()
+        }, { merge: true });
+        setLastSyncTime(Date.now());
+      } catch (error) {
+        // Log sync error but don't crash the simulation loop
+        console.error('Background Sync Error:', error);
+      }
+    }, 10000); // Increased sync interval for stability
 
     return () => clearInterval(syncInterval);
   }, [user, userMetrics, isPlaying]);
+
+  // 3.5 Fuel Consumption Loop
+  useEffect(() => {
+    if (!isPlaying) return;
+    const interval = setInterval(() => {
+      consumeFuel(1); // Consumes per second
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isPlaying, consumeFuel]);
 
   // 4. Multiplayer Synchronization
   useEffect(() => {
@@ -159,47 +192,93 @@ export default function App() {
   }, []);
 
   return (
-    <main className="w-screen h-screen relative bg-black overflow-hidden select-none">
-      <AnimatePresence>
-        {!isAuthReady ? (
-          <motion.div 
-            key="loader"
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[2000] bg-[#05070A] flex items-center justify-center"
-          >
-            <div className="w-8 h-8 border-2 border-[#00E5FF] border-t-transparent rounded-full animate-spin" />
-          </motion.div>
-        ) : !user ? (
-          <Login key="login" />
-        ) : null}
-      </AnimatePresence>
+    <main className="w-screen h-screen relative bg-black overflow-hidden select-none flex">
+      {/* Monetization Sidebar (Left) */}
+      <aside className="w-64 h-full bg-[#05070A] border-r border-white/5 flex flex-col p-4 z-50">
+         <div className="mb-8">
+            <h1 className="text-xl font-black italic tracking-widest text-[#00E5FF]">AETHER</h1>
+            <div className="text-[8px] font-mono text-white/20 uppercase tracking-[0.5em]">Global Flight Sim</div>
+         </div>
 
-      {/* 3D Scene Layer */}
-      <div className="absolute inset-0 z-0">
-        <FlightScene />
+         <div className="flex-1 space-y-6">
+            <div className="p-4 bg-white/5 border border-white/5 rounded">
+               <div className="text-[10px] text-white/40 uppercase font-mono mb-2">Network Hub</div>
+               <nav className="space-y-2">
+                  <SidebarLink icon={<ShoppingBag size={14} />} label="Marketplace" active={isMarketOpen} onClick={() => setMarketOpen(true)} />
+               </nav>
+            </div>
+
+            <AdSense type="sidebar" />
+         </div>
+
+         <div className="mt-auto">
+            <div className="flex items-center gap-3 p-3 bg-white/5 border border-white/5 rounded">
+               <div className="w-8 h-8 rounded bg-[#00E5FF]/10 flex items-center justify-center border border-[#00E5FF]/20">
+                  <span className="text-[10px] font-bold text-[#00E5FF]">PRO</span>
+               </div>
+               <div>
+                  <div className="text-[10px] text-white font-bold">{user?.displayName || 'Simulator Pilot'}</div>
+                  <div className="text-[8px] text-white/40 uppercase font-mono">Rank: Commander</div>
+               </div>
+            </div>
+         </div>
+      </aside>
+
+      <div className="flex-1 relative h-full">
+        <AnimatePresence>
+          {!isAuthReady ? (
+            <motion.div 
+              key="loader"
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[2000] bg-[#05070A] flex items-center justify-center"
+            >
+              <div className="w-8 h-8 border-2 border-[#00E5FF] border-t-transparent rounded-full animate-spin" />
+            </motion.div>
+          ) : !user ? (
+            <Login key="login" />
+          ) : null}
+        </AnimatePresence>
+
+        {/* 3D Scene Layer */}
+        <div className="absolute inset-0 z-0">
+          <GlobalView />
+          <FlightScene />
+        </div>
+
+        {/* Interface Layers */}
+        <HUD />
+        <Dashboard />
+        <GrowthEngine />
+        
+        <AnimatePresence>
+           {isMarketOpen && (
+              <Marketplace 
+                 isOpen={isMarketOpen} 
+                 onClose={() => setMarketOpen(false)} 
+              />
+           )}
+        </AnimatePresence>
+
+        {/* Network Overlays (Small indicators) */}
+        <div className="absolute top-4 left-4 z-[100] flex flex-col gap-2">
+           <div className="px-3 py-1 bg-black/40 backdrop-blur rounded-full border border-white/10 flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]" />
+              <span className="text-[8px] font-mono text-white/60 uppercase">Cloud_Sync: {Math.round((Date.now() - lastSyncTime) / 1000)}s</span>
+           </div>
+        </div>
       </div>
-
-      {/* Interface Layers */}
-      <HUD />
-      <Dashboard />
-      <GrowthEngine />
-
-      {/* Network Overlays (Small indicators) */}
-      <div className="absolute top-4 left-4 z-[100] flex flex-col gap-2">
-         {/* Could list other players here */}
-      </div>
-
-      {/* Global Overlays */}
-      <AnimatePresence>
-        {!isPlaying && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="pointer-events-none"
-          />
-        )}
-      </AnimatePresence>
     </main>
   );
+}
+
+function SidebarLink({ icon, label, active, onClick }: { icon: React.ReactNode; label: string; active: boolean; onClick: () => void }) {
+   return (
+      <button 
+         onClick={onClick}
+         className={`w-full flex items-center gap-3 p-3 rounded transition-all group ${active ? 'bg-[#00E5FF] text-black' : 'hover:bg-white/5 text-white/60 hover:text-white'}`}
+      >
+         {icon}
+         <span className="text-[10px] font-bold tracking-widest uppercase">{label}</span>
+      </button>
+   );
 }

@@ -8,9 +8,18 @@ interface Telemetry {
   pitch: number;
   roll: number;
   yaw: number;
-  fuel: number;
+  fuel: number; // 0-100
+  fuelFlow: number; // Consumption rate
   gearDown: boolean;
   flaps: number;
+}
+
+interface AircraftSkin {
+  id: string;
+  name: string;
+  price: number;
+  previewUrl: string;
+  isOwned: boolean;
 }
 
 interface MissionStatus {
@@ -49,12 +58,17 @@ interface GameState {
     level: number;
     credits: number;
     totalFlightTime: number;
+    ownedSkins: string[]; // List of skin IDs
   };
+  fuelPrice: number;
   
   setPlaying: (playing: boolean) => void;
   setCity: (city: any) => void;
   setAircraft: (id: string) => void;
   updateTelemetry: (data: Partial<Telemetry>) => void;
+  consumeFuel: (dt: number) => void;
+  purchaseFuel: (amount: number) => boolean;
+  purchaseSkin: (skinId: string, price: number) => boolean;
   setMultiplayerPlayers: (players: any[]) => void;
   addMultiplayerPlayer: (player: any) => void;
   removeMultiplayerPlayer: (id: string) => void;
@@ -84,6 +98,7 @@ export const useGameStore = create<GameState>((set) => ({
     roll: 0,
     yaw: 0,
     fuel: 100,
+    fuelFlow: 0,
     gearDown: true,
     flaps: 0,
   },
@@ -99,9 +114,11 @@ export const useGameStore = create<GameState>((set) => ({
   userMetrics: {
     xp: 0,
     level: 1,
-    credits: 0,
+    credits: 5000, // Starting credits
     totalFlightTime: 0,
+    ownedSkins: ['default'],
   },
+  fuelPrice: 0.5, // Credits per %
 
   setPlaying: (playing: boolean) => {
     logEvent(playing ? 'SIM_START' : 'SIM_STOP');
@@ -116,6 +133,49 @@ export const useGameStore = create<GameState>((set) => ({
   updateTelemetry: (data) => set((state) => ({ 
     telemetry: { ...state.telemetry, ...data } 
   })),
+  consumeFuel: (dt) => set((state) => {
+    const consumption = (state.telemetry.throttle * 0.5 + 0.1) * dt;
+    const newFuel = Math.max(0, state.telemetry.fuel - consumption);
+    
+    // Auto-stop if out of fuel
+    if (newFuel === 0 && state.telemetry.fuel > 0) {
+      logEvent('OUT_OF_FUEL');
+    }
+
+    return {
+      telemetry: { ...state.telemetry, fuel: newFuel }
+    };
+  }),
+  purchaseFuel: (amount) => {
+    const { credits } = useGameStore.getState().userMetrics;
+    const { fuel } = useGameStore.getState().telemetry;
+    const cost = amount * useGameStore.getState().fuelPrice;
+
+    if (credits >= cost && fuel + amount <= 100) {
+      set((state) => ({
+        userMetrics: { ...state.userMetrics, credits: state.userMetrics.credits - cost },
+        telemetry: { ...state.telemetry, fuel: state.telemetry.fuel + amount }
+      }));
+      logEvent('FUEL_PURCHASE', { amount, cost });
+      return true;
+    }
+    return false;
+  },
+  purchaseSkin: (skinId, price) => {
+    const { credits, ownedSkins } = useGameStore.getState().userMetrics;
+    if (credits >= price && !ownedSkins.includes(skinId)) {
+      set((state) => ({
+        userMetrics: {
+          ...state.userMetrics,
+          credits: state.userMetrics.credits - price,
+          ownedSkins: [...state.userMetrics.ownedSkins, skinId]
+        }
+      }));
+      logEvent('SKIN_PURCHASE', { skinId, price });
+      return true;
+    }
+    return false;
+  },
   setMultiplayerPlayers: (players) => set({ multiplayerPlayers: players }),
   addMultiplayerPlayer: (player) => set((state) => ({ 
     multiplayerPlayers: [...state.multiplayerPlayers.filter(p => p.id !== player.id), player] 

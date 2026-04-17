@@ -1,6 +1,6 @@
 import { useGameStore } from '../store/gameStore';
 import { motion, AnimatePresence } from 'motion/react';
-import { Navigation, Trophy, CheckCircle, AlertTriangle, ChevronUp, ChevronDown, Plane, Zap } from 'lucide-react';
+import { Navigation, Trophy, CheckCircle, AlertTriangle, ChevronUp, ChevronDown, Plane, Zap, Fuel, Plus } from 'lucide-react';
 import { MISSIONS, CITIES, AIRCRAFT_MODELS } from '../lib/constants';
 import { useEffect, useState } from 'react';
 
@@ -90,6 +90,7 @@ export function HUD() {
   const setPlaying = useGameStore((state) => state.setPlaying);
   const updateTelemetry = useGameStore((state) => state.updateTelemetry);
   const userMetrics = useGameStore((state) => state.userMetrics);
+  const purchaseFuel = useGameStore((state) => state.purchaseFuel);
 
   const [isMobile, setIsMobile] = useState(false);
 
@@ -173,6 +174,35 @@ export function HUD() {
           <HUDParam label="FLPS" value={telemetry.flaps ? 'EXT' : 'RET'} color={telemetry.flaps ? '#00E5FF' : '#fff'} />
           <div className="w-px h-8 bg-white/10 mx-4" />
           <HUDParam label="GEAR" value={telemetry.gearDown ? 'DWN' : 'UP'} color={telemetry.gearDown ? '#44ff44' : '#ff4444'} />
+          <div className="w-px h-8 bg-white/10 mx-4" />
+
+          {/* Fuel Gauge */}
+          <div className="flex flex-col items-center min-w-[80px] relative group pointer-events-auto">
+             <span className="text-[8px] font-mono text-white/40 uppercase tracking-widest mb-1">Fuel</span>
+             <div className="flex items-center gap-2">
+                <div className="w-12 h-2 bg-white/10 rounded-full overflow-hidden border border-white/5">
+                   <motion.div 
+                      animate={{ 
+                         width: `${telemetry.fuel}%`,
+                         backgroundColor: telemetry.fuel < 20 ? '#ff3d00' : '#00E5FF' 
+                      }}
+                      className="h-full"
+                   />
+                </div>
+                <span className={`text-[10px] font-bold font-mono ${telemetry.fuel < 20 ? 'text-[#ff3d00] animate-pulse' : 'text-white'}`}>
+                   {Math.round(telemetry.fuel)}%
+                </span>
+             </div>
+             
+             {/* Quick Refuel Button (when hovering) */}
+             <button 
+               onClick={() => purchaseFuel(20)}
+               className="absolute -top-10 scale-0 group-hover:scale-100 transition-transform bg-[#00E5FF] text-black p-1 rounded-full shadow-lg"
+             >
+                <Plus size={12} strokeWidth={4} />
+             </button>
+          </div>
+
           <div className="w-px h-8 bg-white/10 mx-4" />
           <HUDParam label="LVL" value={userMetrics.level} />
        </div>

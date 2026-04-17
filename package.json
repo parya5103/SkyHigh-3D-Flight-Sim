@@ -35,6 +35,7 @@
     "tailwind-merge": "^3.5.0",
     "three": "^0.184.0",
     "vite": "^6.2.0",
+    "vite-plugin-cesium": "^1.2.23",
     "zustand": "^5.0.12"
   },
   "devDependencies": {

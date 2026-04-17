@@ -52,7 +52,7 @@ export function Atmosphere() {
       
       {/* High-fidelity lighting environment (HDRI Haven inspired) */}
       <Environment 
-        files="https://cdn.jsdelivr.net/gh/pmndrs/drei-assets@master/hdri/sky.hdr" 
+        files="https://raw.githubusercontent.com/pmndrs/drei-assets/master/hdri/sky.hdr" 
       />
       
       <ambientLight intensity={sunData.isDay ? 0.3 * sunData.intensity : 0.05} />
