@@ -176,6 +176,27 @@ export function HUD() {
           <HUDParam label="GEAR" value={telemetry.gearDown ? 'DWN' : 'UP'} color={telemetry.gearDown ? '#44ff44' : '#ff4444'} />
           <div className="w-px h-8 bg-white/10 mx-4" />
 
+          {/* Hull Integrity / Health Gauge */}
+          <div className="flex flex-col items-center min-w-[80px]">
+             <span className="text-[8px] font-mono text-white/40 uppercase tracking-widest mb-1">Hull</span>
+             <div className="flex items-center gap-2">
+                <div className="w-12 h-2 bg-white/10 rounded-full overflow-hidden border border-white/5">
+                   <motion.div 
+                      animate={{ 
+                         width: `${telemetry.health}%`,
+                         backgroundColor: telemetry.health < 30 ? '#ef4444' : '#a8eb12' 
+                      }}
+                      className="h-full"
+                   />
+                </div>
+                <span className={`text-[10px] font-bold font-mono ${telemetry.health < 30 ? 'text-[#ef4444] animate-pulse' : 'text-white'}`}>
+                   {Math.round(telemetry.health)}%
+                </span>
+             </div>
+          </div>
+
+          <div className="w-px h-8 bg-white/10 mx-4" />
+
           {/* Fuel Gauge */}
           <div className="flex flex-col items-center min-w-[80px] relative group pointer-events-auto">
              <span className="text-[8px] font-mono text-white/40 uppercase tracking-widest mb-1">Fuel</span>

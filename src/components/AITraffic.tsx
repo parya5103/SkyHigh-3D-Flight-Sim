@@ -9,18 +9,20 @@ import { Suspense } from 'react';
 // AI Traffic types and their simple flight paths
 const AI_COUNT = 15;
 
-const ASSET_URL = 'https://raw.githubusercontent.com/pmndrs/drei-assets/master/arwing.glb?v=3';
+const ASSET_URL = '/assets/models/arwing.glb';
 
 function AIPlaneModel({ type }: { type: 'AIRLINER' | 'PRIVATE' }) {
   const gltf = useGLTF(ASSET_URL);
-  return <primitive object={gltf.scene.clone()} />;
+  // Clone to avoid sharing same group instance across all traffic
+  const cloned = useMemo(() => gltf.scene.clone(), [gltf.scene]);
+  return <primitive object={cloned} />;
 }
 
 function AIPlaneFallback({ type }: { type: 'AIRLINER' | 'PRIVATE' }) {
   return (
     <mesh>
       <boxGeometry args={[1, 0.5, 3]} />
-      <meshStandardMaterial color={type === 'AIRLINER' ? "white" : "orange"} />
+      <meshStandardMaterial color={type === 'AIRLINER' ? "#f8fafc" : "#f59e0b"} />
     </mesh>
   );
 }
@@ -71,13 +73,13 @@ export function AITraffic() {
     <group ref={instancesRef}>
       {aiState.map((ai, i) => (
         <group key={ai.id} position={ai.position} rotation={ai.rotation} scale={ai.type === 'AIRLINER' ? 5 : 2}>
-           <ErrorBoundary fallback={<AIPlaneFallback type={ai.type} />}>
+           <ErrorBoundary key={ASSET_URL} fallback={<AIPlaneFallback type={ai.type} />}>
              <Suspense fallback={<AIPlaneFallback type={ai.type} />}>
                <AIPlaneModel type={ai.type} />
              </Suspense>
            </ErrorBoundary>
            <pointLight 
-              color={i % 2 === 0 ? "red" : "green"} 
+              color={i % 2 === 0 ? "#ef4444" : "#22c55e"} 
               intensity={10} 
               distance={100} 
               position={[2, 0.5, 0]} 

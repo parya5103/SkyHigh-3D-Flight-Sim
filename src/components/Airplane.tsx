@@ -33,6 +33,8 @@ function ProceduralAirplane({ scale }: { scale: number }) {
 }
 
 function ModelLoader({ url, config }: { url: string, config: any }) {
+  // We use try-catch or rely on Suspense + ErrorBoundary.
+  // useGLTF actually throws if it fails, which is what we want for ErrorBoundary to catch.
   const gltf = useGLTF(url);
 
   return (
@@ -57,9 +59,10 @@ export function Airplane() {
     vtol: { scale: 0.2, rotation: [0, 0, 0] },
   }[aircraftDef.id] || { scale: 0.1, rotation: [0, Math.PI, 0] };
 
+  // Generate a key based on the URL to force re-render/re-catch if URL changes
   return (
     <group ref={group}>
-      <ErrorBoundary fallback={<ProceduralAirplane scale={aircraftConfig.scale * 20} />}>
+      <ErrorBoundary key={aircraftDef.url} fallback={<ProceduralAirplane scale={aircraftConfig.scale * 20} />}>
         <Suspense fallback={<ProceduralAirplane scale={aircraftConfig.scale * 20} />}>
           <ModelLoader url={aircraftDef.url} config={aircraftConfig} />
         </Suspense>

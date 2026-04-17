@@ -71,22 +71,22 @@ export const AIRCRAFT_MODELS = [
     id: 'swift',
     name: 'Boeing 747-8 Intercontinental',
     description: 'Ultra-realistic commercial airliner with long-range performance and heavy handling characteristics.',
-    // High-poly airliner from drei-assets
-    url: 'https://raw.githubusercontent.com/pmndrs/drei-assets/master/airplane.glb',
+    // High-poly airliner from local assets
+    url: '/assets/models/airplane.glb',
     stats: { speed: '540 KT', agility: 'Low', fuel: 'Ultra' }
   },
   {
     id: 'stealth',
     name: 'Advanced Interceptor',
     description: 'High-agility fighter designed for extreme speeds and rapid response missions.',
-    url: 'https://raw.githubusercontent.com/pmndrs/drei-assets/master/arwing.glb', 
+    url: '/assets/models/arwing.glb', 
     stats: { speed: 'Mach 2.2', agility: 'Maximum', fuel: 'Medium' }
   },
   {
     id: 'vtol',
     name: 'Heavy-Lift Transport',
     description: 'Versatile cargo transport with stable lift and reliable performance.',
-    url: 'https://raw.githubusercontent.com/pmndrs/drei-assets/master/scifi-ship.glb',
+    url: '/assets/models/scifi-ship.glb',
     stats: { speed: '280 KT', agility: 'Medium', fuel: 'High' }
   }
 ];

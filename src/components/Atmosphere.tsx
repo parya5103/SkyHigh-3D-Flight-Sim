@@ -50,11 +50,6 @@ export function Atmosphere() {
         blur={0.5}
       />
       
-      {/* High-fidelity lighting environment (HDRI Haven inspired) */}
-      <Environment 
-        files="https://raw.githubusercontent.com/pmndrs/drei-assets/master/hdri/sky.hdr" 
-      />
-      
       <ambientLight intensity={sunData.isDay ? 0.3 * sunData.intensity : 0.05} />
       
       <directionalLight 

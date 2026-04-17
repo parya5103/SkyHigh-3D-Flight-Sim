@@ -10,6 +10,7 @@ interface Telemetry {
   yaw: number;
   fuel: number; // 0-100
   fuelFlow: number; // Consumption rate
+  health: number; // 0-100
   gearDown: boolean;
   flaps: number;
 }
@@ -61,12 +62,15 @@ interface GameState {
     ownedSkins: string[]; // List of skin IDs
   };
   fuelPrice: number;
+  lastDamageTime: number; // Timestamp
   
   setPlaying: (playing: boolean) => void;
   setCity: (city: any) => void;
   setAircraft: (id: string) => void;
   updateTelemetry: (data: Partial<Telemetry>) => void;
   consumeFuel: (dt: number) => void;
+  takeDamage: (amount: number) => void;
+  heal: (amount: number) => void;
   purchaseFuel: (amount: number) => boolean;
   purchaseSkin: (skinId: string, price: number) => boolean;
   setMultiplayerPlayers: (players: any[]) => void;
@@ -99,6 +103,7 @@ export const useGameStore = create<GameState>((set) => ({
     yaw: 0,
     fuel: 100,
     fuelFlow: 0,
+    health: 100,
     gearDown: true,
     flaps: 0,
   },
@@ -119,6 +124,7 @@ export const useGameStore = create<GameState>((set) => ({
     ownedSkins: ['default'],
   },
   fuelPrice: 0.5, // Credits per %
+  lastDamageTime: 0,
 
   setPlaying: (playing: boolean) => {
     logEvent(playing ? 'SIM_START' : 'SIM_STOP');
@@ -130,9 +136,20 @@ export const useGameStore = create<GameState>((set) => ({
   },
   setCity: (city) => set({ selectedCity: city }),
   setAircraft: (id) => set({ selectedAircraftId: id }),
-  updateTelemetry: (data) => set((state) => ({ 
-    telemetry: { ...state.telemetry, ...data } 
-  })),
+  updateTelemetry: (data) => set((state) => {
+    // Auto-fix numerical 'code errors' (NaN or Infinity)
+    const validatedData = { ...data };
+    for (const key in validatedData) {
+      const val = (validatedData as any)[key];
+      if (typeof val === 'number' && (isNaN(val) || !isFinite(val))) {
+        console.warn(`System detected logic error in ${key}: ${val}. Auto-fixing...`);
+        (validatedData as any)[key] = (state.telemetry as any)[key] || 0;
+      }
+    }
+    return {
+      telemetry: { ...state.telemetry, ...validatedData }
+    };
+  }),
   consumeFuel: (dt) => set((state) => {
     const consumption = (state.telemetry.throttle * 0.5 + 0.1) * dt;
     const newFuel = Math.max(0, state.telemetry.fuel - consumption);
@@ -146,6 +163,19 @@ export const useGameStore = create<GameState>((set) => ({
       telemetry: { ...state.telemetry, fuel: newFuel }
     };
   }),
+  takeDamage: (amount) => set((state) => {
+    const newHealth = Math.max(0, state.telemetry.health - amount);
+    if (newHealth === 0 && state.telemetry.health > 0) {
+      logEvent('AIRCRAFT_CRASHED');
+    }
+    return {
+      telemetry: { ...state.telemetry, health: newHealth },
+      lastDamageTime: Date.now()
+    };
+  }),
+  heal: (amount) => set((state) => ({
+    telemetry: { ...state.telemetry, health: Math.min(100, state.telemetry.health + amount) }
+  })),
   purchaseFuel: (amount) => {
     const { credits } = useGameStore.getState().userMetrics;
     const { fuel } = useGameStore.getState().telemetry;

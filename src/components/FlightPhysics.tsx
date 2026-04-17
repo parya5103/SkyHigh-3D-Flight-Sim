@@ -130,6 +130,12 @@ export function FlightPhysics({ children }: { children: React.ReactNode }) {
     // Ground collision & Rolling
     const onGround = plane.position.y <= 2.1;
     if (onGround) {
+       // Damage on hard landing
+       if (velocity.current.y < -5) { // If falling faster than 5m/s
+         const { takeDamage } = useGameStore.getState();
+         takeDamage(Math.round(Math.abs(velocity.current.y) * 5));
+       }
+
        plane.position.y = 2.1;
        velocity.current.y = Math.max(0, velocity.current.y);
        

@@ -65,10 +65,25 @@ async function startServer() {
       server: { middlewareMode: true },
       appType: 'spa',
     });
+    
+    // API-like middleware to catch missing assets before SPA fallback
+    app.use('/assets', (req, res, next) => {
+      // If we are here, it means express.static or vite didn't find the file in public
+      // We check if it exists in the filesystem to be sure, or just 404 if it's an asset path
+      // that reached this middleware.
+      res.status(404).send('Asset not found');
+    });
+
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
+    
+    // Explicitly 404 for missing assets in production too
+    app.use('/assets', (req, res) => {
+      res.status(404).send('Asset not found');
+    });
+
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
